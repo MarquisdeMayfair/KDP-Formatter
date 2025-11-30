@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDP Formatter - Preview</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>{% if config.output_format in ['pdf', 'both'] %}PDF Preview & Validation{% else %}EPUB Generation & Validation{% endif %}</h1>
+                <p id="filename-display">{{ filename }}</p>
+            </div>
+            <div class="header-right">
+                <button id="back-btn" class="btn-secondary">← Back to Upload</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="preview-main">
+        <!-- PDF Viewer Section (Left Column) -->
+        {% if config.output_format in ['pdf', 'both'] %}
+        <section class="pdf-section">
+            <div class="pdf-controls">
+                <div class="control-group">
+                    <button id="prev-page" class="btn-secondary">‹ Previous</button>
+                    <span id="page-info">Page <span id="current-page">1</span> of <span id="total-pages">1</span></span>
+                    <button id="next-page" class="btn-secondary">Next ›</button>
+                </div>
+                <div class="control-group">
+                    <button id="zoom-out" class="btn-secondary">−</button>
+                    <span id="zoom-level">100%</span>
+                    <button id="zoom-in" class="btn-secondary">+</button>
+                    <button id="zoom-50" class="btn-secondary">50%</button>
+                    <button id="zoom-75" class="btn-secondary">75%</button>
+                    <button id="zoom-100" class="btn-secondary">100%</button>
+                    <button id="zoom-125" class="btn-secondary">125%</button>
+                    <button id="zoom-150" class="btn-secondary">150%</button>
+                    <button id="fit-width" class="btn-secondary">Fit Width</button>
+                    <button id="fit-page" class="btn-secondary">Fit Page</button>
+                </div>
+                <div class="control-group">
+                    <label for="jump-page">Jump to Page:</label>
+                    <input type="number" id="jump-page" min="1" placeholder="Page #" style="width: 60px; margin-left: 5px;">
+                    <button id="jump-btn" class="btn-secondary">Go</button>
+                </div>
+                <div class="control-group">
+                    <button id="rotate" class="btn-secondary">↻ Rotate</button>
+                    <button id="fullscreen" class="btn-secondary">⛶ Fullscreen</button>
+                </div>
+            </div>
+
+            <div class="pdf-container">
+                <canvas id="pdf-canvas"></canvas>
+            </div>
+        </section>
+        {% else %}
+        <section class="pdf-section">
+            <div class="no-pdf-message">
+                <h3>EPUB Only Output</h3>
+                <p>This session was configured to generate EPUB only. No PDF was created for preview.</p>
+                <p>You can download the EPUB file using the button in the right panel.</p>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Validation Results Section (Right Column) -->
+        <section class="validation-section">
+            <!-- Overall Status -->
+            <div class="status-card">
+                <h3>Validation Status</h3>
+                <div id="overall-status" class="status-badge status-loading">Loading...</div>
+            </div>
+
+            <!-- Validation Checks -->
+            <div class="validation-card">
+                <h3>Detailed Results</h3>
+                <div id="validation-results" class="validation-list">
+                    <div class="loading-message">Loading validation results...</div>
+                </div>
+            </div>
+
+            <!-- KDP Formatting Checklist -->
+            <div class="checklist-card">
+                <h3>KDP Formatting Checklist</h3>
+                <div class="formatting-checklist">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-indent-first" class="checklist-checkbox">
+                        <label for="check-indent-first">✓ First paragraphs after headings have no indent</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-indent-subsequent" class="checklist-checkbox">
+                        <label for="check-indent-subsequent">✓ Subsequent paragraphs have 0.2-0.25in indent</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-drop-caps" class="checklist-checkbox">
+                        <label for="check-drop-caps">✓ Drop caps (if enabled) don't overlap adjacent text</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-orphans-widows" class="checklist-checkbox">
+                        <label for="check-orphans-widows">✓ No pages with single lines (orphan/widow control)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-chapter-breaks" class="checklist-checkbox">
+                        <label for="check-chapter-breaks">✓ Chapters start on new pages</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-margins" class="checklist-checkbox">
+                        <label for="check-margins">✓ Margins are consistent ({{ config.margins }}in or configured value)</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check-text-cutoff" class="checklist-checkbox">
+                        <label for="check-text-cutoff">✓ No text cutoff at page edges</label>
+                    </div>
+                </div>
+                <div class="checklist-actions">
+                    <button id="clear-checklist" class="btn-secondary">Clear All</button>
+                    <button id="save-checklist" class="btn-secondary">Save Progress</button>
+                </div>
+            </div>
+
+            <!-- Configuration Summary -->
+            <div class="config-card">
+                <h3>Configuration Used</h3>
+                <div id="config-summary" class="config-list">
+                    <div class="config-item">
+                        <span class="config-label">Output Format:</span>
+                        <span id="config-format" class="config-value">{{ config.output_format|title }}</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">Structure Detection:</span>
+                        <span id="config-ai" class="config-value">{{ 'AI-powered' if config.use_ai else 'Regex-based' }}</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">Page Size:</span>
+                        <span id="config-page-size" class="config-value">{{ config.page_size }}</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">Margins:</span>
+                        <span id="config-margins" class="config-value">{{ config.margins }} inches</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">Drop Caps:</span>
+                        <span id="config-drop-caps" class="config-value">{{ 'Enabled' if config.use_drop_caps else 'Disabled' }}</span>
+                    </div>
+                    {% if config.use_ai and ai_cost %}
+                    <div class="config-item">
+                        <span class="config-label">AI Cost:</span>
+                        <span id="config-ai-cost" class="config-value">${{ "%.3f"|format(ai_cost) }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="config-item">
+                        <span class="config-label">Generated:</span>
+                        <span id="config-timestamp" class="config-value">{{ timestamp or 'Unknown' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions-card">
+                <h3>Download Files</h3>
+                <div class="action-buttons">
+                    {% if config.output_format in ['pdf', 'both'] %}
+                    <button id="download-pdf" class="btn-primary">📄 Download PDF</button>
+                    {% endif %}
+                    {% if config.output_format in ['epub', 'both'] %}
+                    <button id="download-epub" class="btn-primary">📖 Download EPUB</button>
+                    {% endif %}
+                    <button id="download-report" class="btn-secondary">📋 Validation Report</button>
+                    <button id="download-idm" class="btn-secondary">🔧 IDM JSON</button>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="regenerate" class="btn-secondary">🔄 Regenerate</button>
+                    <button id="delete-session" class="btn-danger">🗑️ Delete Files</button>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                {% if config.output_format in ['pdf', 'both'] %}
+                <button id="print-pdf" class="quick-action-btn">🖨️ Print</button>
+                {% endif %}
+                <button id="share-link" class="quick-action-btn">🔗 Share Link</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Initialize PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Configuration
+        const sessionId = '{{ session_id }}';
+        const config = JSON.parse('{{ config_json|safe }}');
+
+        // PDF viewer variables
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.0;
+        let rotation = 0;
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (config.output_format === 'pdf' || config.output_format === 'both') {
+                loadPDF();
+            }
+            loadValidationResults();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // PDF controls
+            document.getElementById('prev-page').addEventListener('click', onPrevPage);
+            document.getElementById('next-page').addEventListener('click', onNextPage);
+            document.getElementById('zoom-in').addEventListener('click', () => changeZoom(0.25));
+            document.getElementById('zoom-out').addEventListener('click', () => changeZoom(-0.25));
+            document.getElementById('zoom-50').addEventListener('click', () => setZoom(0.5));
+            document.getElementById('zoom-75').addEventListener('click', () => setZoom(0.75));
+            document.getElementById('zoom-100').addEventListener('click', () => setZoom(1.0));
+            document.getElementById('zoom-125').addEventListener('click', () => setZoom(1.25));
+            document.getElementById('zoom-150').addEventListener('click', () => setZoom(1.5));
+            document.getElementById('fit-width').addEventListener('click', fitToWidth);
+            document.getElementById('fit-page').addEventListener('click', fitToPage);
+            document.getElementById('rotate').addEventListener('click', rotate);
+            document.getElementById('fullscreen').addEventListener('click', toggleFullscreen);
+
+            // Jump to page functionality
+            const jumpInput = document.getElementById('jump-page');
+            const jumpBtn = document.getElementById('jump-btn');
+            jumpBtn.addEventListener('click', () => jumpToPage());
+            jumpInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    jumpToPage();
+                }
+            });
+
+            // Action buttons
+            document.getElementById('back-btn').addEventListener('click', () => window.location.href = '/');
+            {% if config.output_format in ['pdf', 'both'] %}
+            document.getElementById('download-pdf').addEventListener('click', () => downloadFile('pdf'));
+            {% endif %}
+            {% if config.output_format in ['epub', 'both'] %}
+            document.getElementById('download-epub').addEventListener('click', () => downloadFile('epub'));
+            {% endif %}
+            document.getElementById('download-report').addEventListener('click', () => downloadFile('report'));
+            document.getElementById('download-idm').addEventListener('click', () => downloadFile('idm'));
+            document.getElementById('regenerate').addEventListener('click', regenerate);
+            document.getElementById('delete-session').addEventListener('click', deleteSession);
+            {% if config.output_format in ['pdf', 'both'] %}
+            document.getElementById('print-pdf').addEventListener('click', printPDF);
+            {% endif %}
+            document.getElementById('share-link').addEventListener('click', shareLink);
+
+            // Formatting checklist
+            document.getElementById('clear-checklist').addEventListener('click', clearChecklist);
+            document.getElementById('save-checklist').addEventListener('click', saveChecklist);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', handleKeyboardShortcuts);
+
+            // Load saved checklist state
+            loadChecklistState();
+        }
+
+        async function loadPDF() {
+            try {
+                const loadingTask = pdfjsLib.getDocument(`/download/${sessionId}/pdf`);
+                pdfDoc = await loadingTask.promise;
+                document.getElementById('total-pages').textContent = pdfDoc.numPages;
+                renderPage(pageNum);
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                showError('Failed to load PDF');
+            }
+        }
+
+        async function renderPage(num) {
+            if (pageRendering) return;
+            pageRendering = true;
+
+            try {
+                const page = await pdfDoc.getPage(num);
+                const viewport = page.getViewport({ scale: scale, rotation: rotation });
+
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                await page.render(renderContext).promise;
+
+                document.getElementById('current-page').textContent = num;
+                updateZoomDisplay();
+
+            } catch (error) {
+                console.error('Error rendering page:', error);
+            } finally {
+                pageRendering = false;
+            }
+
+            if (pageNumPending !== null) {
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function onPrevPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        function changeZoom(delta) {
+            scale = Math.max(0.5, Math.min(3.0, scale + delta));
+            queueRenderPage(pageNum);
+        }
+
+        function fitToWidth() {
+            if (!pdfDoc) return;
+            const container = document.querySelector('.pdf-container');
+            const containerWidth = container.clientWidth - 40; // padding
+            // This is a simplified calculation - would need actual page width
+            scale = Math.max(0.5, Math.min(2.0, containerWidth / 400)); // rough estimate
+            queueRenderPage(pageNum);
+        }
+
+        function fitToPage() {
+            if (!pdfDoc) return;
+            const container = document.querySelector('.pdf-container');
+            const containerHeight = container.clientHeight - 40;
+            scale = Math.max(0.5, Math.min(2.0, containerHeight / 600)); // rough estimate
+            queueRenderPage(pageNum);
+        }
+
+        function rotate() {
+            rotation = (rotation + 90) % 360;
+            queueRenderPage(pageNum);
+        }
+
+        function toggleFullscreen() {
+            const container = document.querySelector('.pdf-container');
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                container.requestFullscreen();
+            }
+        }
+
+        function updateZoomDisplay() {
+            document.getElementById('zoom-level').textContent = Math.round(scale * 100) + '%';
+        }
+
+        async function loadValidationResults() {
+            try {
+                const response = await fetch(`/validate/${sessionId}`);
+                const data = await response.json();
+
+                displayValidationResults(data);
+            } catch (error) {
+                console.error('Error loading validation:', error);
+                document.getElementById('validation-results').innerHTML = '<div class="error">Failed to load validation results</div>';
+            }
+        }
+
+        function displayValidationResults(data) {
+            const container = document.getElementById('validation-results');
+
+            // Update overall status
+            const statusBadge = document.getElementById('overall-status');
+            statusBadge.className = `status-badge status-${data.overall_status}`;
+            statusBadge.textContent = data.overall_status.toUpperCase();
+
+            // Display individual checks
+            let html = '';
+            const checks = data.checks || [];
+
+            if (checks.length === 0) {
+                html = '<div class="no-results">No validation checks found</div>';
+            } else {
+                checks.forEach(check => {
+                    const statusClass = check.status;
+                    const icon = {
+                        'pass': '✓',
+                        'fail': '✗',
+                        'warning': '⚠',
+                        'error': '✗'
+                    }[check.status] || '?';
+
+                    html += `
+                        <div class="validation-item ${statusClass}">
+                            <div class="validation-header">
+                                <span class="validation-icon">${icon}</span>
+                                <span class="validation-name">${check.check_name}</span>
+                                <span class="validation-status">${check.status.toUpperCase()}</span>
+                            </div>
+                            <div class="validation-message">${check.message}</div>
+                            ${check.details ? `<div class="validation-details">${JSON.stringify(check.details, null, 2)}</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        function downloadFile(type) {
+            const link = document.createElement('a');
+            link.href = `/download/${sessionId}/${type}`;
+            link.download = ''; // Let the server set the filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function regenerate() {
+            // This would redirect back to upload form with same settings
+            // For now, just go back to upload
+            window.location.href = '/';
+        }
+
+        async function deleteSession() {
+            if (!confirm('Are you sure you want to delete all generated files for this session?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/cleanup/${sessionId}`, { method: 'POST' });
+                if (response.ok) {
+                    alert('Session files deleted successfully');
+                    window.location.href = '/';
+                } else {
+                    alert('Failed to delete session files');
+                }
+            } catch (error) {
+                console.error('Error deleting session:', error);
+                alert('Error deleting session files');
+            }
+        }
+
+        function printPDF() {
+            window.open(`/download/${sessionId}/pdf`, '_blank');
+        }
+
+        function shareLink() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Link copied to clipboard');
+            });
+        }
+
+        function showError(message) {
+            const container = document.querySelector('.pdf-container');
+            container.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        // Jump to page functionality
+        function jumpToPage() {
+            const jumpInput = document.getElementById('jump-page');
+            const targetPage = parseInt(jumpInput.value);
+            if (isNaN(targetPage) || targetPage < 1 || targetPage > pdfDoc.numPages) {
+                alert(`Please enter a valid page number between 1 and ${pdfDoc.numPages}`);
+                return;
+            }
+            pageNum = targetPage;
+            queueRenderPage(pageNum);
+            jumpInput.value = ''; // Clear input after jump
+        }
+
+        // Set zoom to specific level
+        function setZoom(scale) {
+            this.scale = scale;
+            queueRenderPage(pageNum);
+        }
+
+        // Keyboard shortcuts handler
+        function handleKeyboardShortcuts(e) {
+            // Ignore shortcuts when typing in input fields
+            if (e.target.tagName === 'INPUT') return;
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    onPrevPage();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    onNextPage();
+                    break;
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    changeZoom(0.25);
+                    break;
+                case '-':
+                    e.preventDefault();
+                    changeZoom(-0.25);
+                    break;
+                case '0':
+                    e.preventDefault();
+                    setZoom(1.0);
+                    break;
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+            }
+        }
+
+        // Formatting checklist functions
+        function clearChecklist() {
+            const checkboxes = document.querySelectorAll('.checklist-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            // Clear from localStorage
+            localStorage.removeItem(`checklist_${sessionId}`);
+        }
+
+        function saveChecklist() {
+            const checklistState = {};
+            const checkboxes = document.querySelectorAll('.checklist-checkbox');
+            checkboxes.forEach(checkbox => {
+                checklistState[checkbox.id] = checkbox.checked;
+            });
+            localStorage.setItem(`checklist_${sessionId}`, JSON.stringify(checklistState));
+            alert('Checklist progress saved!');
+        }
+
+        function loadChecklistState() {
+            const savedState = localStorage.getItem(`checklist_${sessionId}`);
+            if (savedState) {
+                const checklistState = JSON.parse(savedState);
+                Object.keys(checklistState).forEach(checkboxId => {
+                    const checkbox = document.getElementById(checkboxId);
+                    if (checkbox) {
+                        checkbox.checked = checklistState[checkboxId];
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

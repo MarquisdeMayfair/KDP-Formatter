@@ -1,0 +1,242 @@
+/* EPUB 3 Stylesheet for KDP Formatter POC
+ *
+ * This stylesheet provides KDP-compatible styling for EPUB 3 files,
+ * including embedded Source Serif 4 fonts and reflowable layout.
+ */
+
+/* Font declarations */
+@font-face {
+    font-family: "Source Serif 4";
+    font-weight: normal;
+    font-style: normal;
+    src: url("SourceSerif4-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Source Serif 4";
+    font-weight: 600;
+    font-style: normal;
+    src: url("SourceSerif4-Semibold.ttf") format("truetype");
+}
+
+/* Body styles */
+body {
+    font-family: "Source Serif 4", serif;
+    font-size: 1em;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    -ms-hyphens: auto;
+    color: #000;
+    background-color: #fff;
+}
+
+/* Chapter styles */
+/* page-break-inside: avoid prevents awkward breaks within chapter content */
+/* break-before: page ensures chapters start on new pages per KDP standards */
+section.chapter {
+    break-before: page;  /* modern */
+    page-break-before: always;  /* fallback for legacy engines */
+    page-break-inside: avoid;  /* Prevent awkward breaks within chapter sections */
+    margin-top: 2em;
+    margin-bottom: 1em;
+}
+
+.chapter-title {
+    font-family: "Source Serif 4", serif;
+    font-weight: 600;
+    font-size: 1.5em;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 1em;
+    page-break-after: avoid;
+}
+
+/* Heading hierarchy */
+h1 {
+    font-family: "Source Serif 4", serif;
+    font-weight: 600;
+    font-size: 1.5em;
+    text-align: center;
+    margin-top: 2em;
+    margin-bottom: 1em;
+    page-break-after: avoid;
+}
+
+h2 {
+    font-family: "Source Serif 4", serif;
+    font-weight: 600;
+    font-size: 1.25em;
+    text-align: left;
+    margin-top: 1.5em;
+    margin-bottom: 0.8em;
+    page-break-after: avoid;
+}
+
+h3 {
+    font-family: "Source Serif 4", serif;
+    font-weight: 600;
+    font-size: 1.1em;
+    text-align: left;
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+    page-break-after: avoid;
+}
+
+/* Paragraph styles - matches PDF formatting for consistency */
+/* orphans: 3 and widows: 3 ensure no single-line orphans or widows per KDP standards */
+/* These prevent unprofessional single-line pages in both EPUB and printed versions */
+p {
+    margin-top: 0;
+    margin-bottom: 0;  /* KDP Standard default: no spacing between paragraphs */
+    text-indent: 1.5em;  /* Standard indent for EPUB (equivalent to ~0.25in) */
+    page-break-inside: avoid;
+    orphans: 3;  /* KDP requirement: minimum 3 lines prevents single-line orphans */
+    widows: 3;   /* KDP requirement: minimum 3 lines prevents single-line widows */
+}
+
+/* Modern paragraph spacing (optional, not traditional KDP) */
+body.use-paragraph-spacing p {
+    margin-bottom: 0.75em;
+}
+
+/* First paragraph after headings: no indent (KDP standard)
+ * Uses both class-based (.first-para) and adjacent sibling selectors
+ * for maximum compatibility */
+p.first-para { text-indent: 0 !important; }
+h1 + p,
+h2 + p,
+h3 + p,
+.chapter-title + p {
+    text-indent: 0 !important;
+}
+
+/* Disable indentation entirely (optional, for non-KDP use) */
+body.no-indent p {
+    text-indent: 0 !important;
+}
+
+/* Blockquote styles */
+/* page-break-inside: avoid prevents blockquotes from breaking awkwardly across pages */
+/* EPUB readers may interpret page break rules differently, but this provides guidance */
+blockquote {
+    margin: 1em 2em;
+    font-style: italic;
+    text-indent: 0;
+    page-break-inside: avoid;  /* Prevent awkward breaks within blockquotes */
+}
+
+blockquote p {
+    text-indent: 0;
+}
+
+cite {
+    font-style: normal;
+    font-weight: normal;
+    font-size: 0.9em;
+    text-align: right;
+    display: block;
+    margin-top: 0.5em;
+}
+
+/* Front/back matter */
+.front-matter,
+.back-matter {
+    text-align: center;
+}
+
+.front-matter p,
+.back-matter p {
+    text-indent: 0;
+}
+
+/* Footnote/endnote styles */
+.noteref {
+    font-size: 0.8em;
+    vertical-align: super;
+    line-height: 1;
+    margin-left: 0.1em;
+}
+
+.endnotes {
+    font-size: 0.9em;
+    margin-top: 3em;
+    page-break-before: always;
+}
+
+.endnotes h1 {
+    font-size: 1.2em;
+    text-align: center;
+    margin-bottom: 1.5em;
+}
+
+.endnote {
+    margin-bottom: 1em;
+    text-indent: 0;
+    page-break-inside: avoid;  /* Keep individual endnotes together on pages */
+}
+
+.endnote-number {
+    font-weight: 600;
+    margin-right: 0.5em;
+}
+
+.endnote-text {
+    text-indent: 0;
+}
+
+/* Quote class for paragraphs that are quotes */
+p.quote {
+    font-style: italic;
+    text-indent: 0;
+    margin-left: 1em;
+    margin-right: 1em;
+}
+
+/* Accessibility improvements */
+abbr,
+acronym {
+    border-bottom: 1px dotted #000;
+    cursor: help;
+}
+
+/* High contrast focus for links */
+a:focus {
+    outline: 2px solid #000;
+    outline-offset: 2px;
+}
+
+/* Ensure proper spacing for readability */
+* {
+    box-sizing: border-box;
+}
+
+/* Print-specific overrides (for when EPUB is printed) */
+/* EPUB readers may interpret page break rules differently, but these provide guidance */
+/* for rendering engines and ensure consistency when EPUBs are printed or converted */
+@media print {
+    body {
+        font-size: 11pt;
+        line-height: 1.4;
+        orphans: 3;  /* KDP requirement: prevent single-line orphans when printing */
+        widows: 3;   /* KDP requirement: prevent single-line widows when printing */
+    }
+
+    section.chapter {
+        break-before: page;  /* Maintain chapter page breaks in print */
+    }
+
+    /* Ensure proper page break behavior for printed EPUBs */
+    h1, h2, h3, .chapter-title {
+        page-break-after: avoid;  /* Prevent headings from being widowed in print */
+    }
+
+    blockquote {
+        page-break-inside: avoid;  /* Prevent blockquotes from breaking in print */
+    }
+}
+

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDP Formatter - Local Testing</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>KDP Formatter - Local Testing</h1>
+        <p>Upload documents and test formatting options before deployment</p>
+    </header>
+
+    <div id="dependency-status" class="status-panel">
+        <h3>System Status</h3>
+        <div id="status-content">Checking dependencies...</div>
+    </div>
+
+    <main>
+        <!-- File Upload Section -->
+        <section class="upload-section">
+            <h2>Document Upload</h2>
+            <div id="drop-zone" class="drop-zone">
+                <div id="drop-content">
+                    <div class="upload-icon">📄</div>
+                    <p>Drag & drop your document here or click to browse</p>
+                    <p class="upload-formats">Supported: .txt, .pdf, .docx, .md (max 50MB)</p>
+                    <input type="file" id="file-input" accept=".txt,.pdf,.docx,.md" hidden>
+                </div>
+                <div id="file-info" class="file-info" style="display: none;">
+                    <div class="file-icon">📄</div>
+                    <div class="file-details">
+                        <div id="file-name" class="file-name"></div>
+                        <div id="file-size" class="file-size"></div>
+                    </div>
+                    <button id="clear-file" class="btn-secondary">Clear</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configuration Section -->
+        <section class="config-section">
+            <h2>Configuration Options</h2>
+            <form id="config-form">
+                <!-- Output Format -->
+                <div class="form-group">
+                    <label for="output-format">Output Format</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="output_format" value="pdf" checked>
+                            PDF only
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="output_format" value="epub">
+                            EPUB only
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="output_format" value="both">
+                            Both PDF and EPUB
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Structure Detection -->
+                <div class="form-group">
+                    <label for="use-ai">Structure Detection</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="use_ai" value="false" checked>
+                            Regex-based (free)
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="use_ai" value="true">
+                            AI-powered (requires OpenAI API key)
+                            <span id="ai-cost-estimate" class="ai-cost" style="display: none;">Est. $0.05-0.15</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Page Size -->
+                <div class="form-group">
+                    <label for="page-size">Page Size</label>
+                    <select id="page-size" name="page_size">
+                        <option value="6x9" selected>6" x 9" (Standard KDP)</option>
+                        <option value="8.5x11">8.5" x 11" (Letter)</option>
+                    </select>
+                </div>
+
+                <!-- Margins -->
+                <div class="form-group">
+                    <label for="margins">Margins</label>
+                    <input type="number" id="margins" name="margins" value="0.75" min="0.5" max="1.5" step="0.25">
+                    <span class="input-unit">inches</span>
+                </div>
+
+                <!-- Drop Caps -->
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="use-drop-caps" name="use_drop_caps">
+                        Enable Drop Caps
+                        <small class="warning-text">(May cause formatting issues - test carefully)</small>
+                    </label>
+                </div>
+
+                <!-- Paragraph Formatting -->
+                <div class="form-group">
+                    <label>Paragraph Formatting:</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="formatting_style" value="kdp_standard" checked>
+                            KDP Standard (indent, no spacing)
+                        </label>
+                        <label>
+                            <input type="radio" name="formatting_style" value="modern">
+                            Modern (indent + spacing)
+                        </label>
+                        <label>
+                            <input type="radio" name="formatting_style" value="no_indent">
+                            No Indentation (spacing only)
+                        </label>
+                    </div>
+                    <small class="help-text">KDP Standard is recommended for print books. Modern and No Indent options are better for readability but may not meet KDP guidelines.</small>
+                </div>
+            </form>
+        </section>
+
+        <!-- Generate Button -->
+        <section class="action-section">
+            <button id="generate-btn" class="btn-primary" disabled>
+                Generate & Validate
+            </button>
+            <button id="test-formatting-btn" class="btn-secondary" title="Generate a test PDF with known formatting patterns to verify drop caps, indentation, and page breaks">
+                Generate Formatting Test PDF
+            </button>
+            <p class="help-text">Use the test button to quickly verify formatting fixes without uploading files</p>
+        </section>
+
+        <!-- Progress Section -->
+        <section id="progress-section" class="progress-section" style="display: none;">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-text" class="progress-text">Uploading...</div>
+            </div>
+        </section>
+
+        <!-- Recent Conversions -->
+        <section id="recent-section" class="recent-section">
+            <h2>Recent Conversions</h2>
+            <div id="recent-list" class="recent-list">
+                <p class="no-recent">No recent conversions</p>
+            </div>
+        </section>
+
+        <!-- Help Section -->
+        <details class="help-section">
+            <summary>Help & Supported Formats</summary>
+            <div class="help-content">
+                <h3>Supported File Formats</h3>
+                <ul>
+                    <li><strong>.txt</strong> - Plain text files</li>
+                    <li><strong>.pdf</strong> - PDF documents (text extraction)</li>
+                    <li><strong>.docx</strong> - Microsoft Word documents</li>
+                    <li><strong>.md</strong> - Markdown files</li>
+                </ul>
+
+                <h3>KDP Formatting Requirements</h3>
+                <ul>
+                    <li>Margins: 0.75 inches on all sides</li>
+                    <li>Page size: 6" x 9" (standard) or 8.5" x 11"</li>
+                    <li>Paragraph indentation: 0.25" (except first paragraph after headings)</li>
+                    <li>No drop caps that overlap text</li>
+                    <li>Proper orphan/widow control</li>
+                </ul>
+
+                <h3>Testing Checklist</h3>
+                <ul>
+                    <li>Check paragraph indentation patterns</li>
+                    <li>Verify no text overlap (especially with drop caps)</li>
+                    <li>Test page breaks and chapter starts</li>
+                    <li>Validate margins and alignment</li>
+                    <li>Upload final PDF to KDP Preview tool</li>
+                </ul>
+            </div>
+        </details>
+    </main>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

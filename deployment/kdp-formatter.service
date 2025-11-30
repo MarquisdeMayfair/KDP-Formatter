@@ -1,0 +1,33 @@
+[Unit]
+Description=KDP Formatter SaaS Application
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kdp-formatter
+Group=kdp-formatter
+WorkingDirectory=/opt/kdp-formatter
+Environment="PATH=/opt/kdp-formatter/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/opt/kdp-formatter/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8001 --workers 2
+Restart=always
+RestartSec=10
+StandardOutput=append:/opt/kdp-formatter/logs/app.log
+StandardError=append:/opt/kdp-formatter/logs/error.log
+
+# Resource limits (to protect other VM services)
+MemoryMax=2G
+CPUQuota=150%
+TasksMax=100
+LimitNOFILE=4096
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/kdp-formatter/uploads /opt/kdp-formatter/outputs /opt/kdp-formatter/logs
+
+[Install]
+WantedBy=multi-user.target

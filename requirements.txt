@@ -1,0 +1,63 @@
+# KDP Formatter - Python Requirements
+# This file contains all Python dependencies with pinned versions for reproducibility
+# System dependencies (Pandoc, Tesseract, ImageMagick, Ghostscript, epubcheck) are installed via install_system_deps.sh
+
+# Core framework and Web UI
+fastapi==0.109.0
+uvicorn[standard]==0.27.0  # ASGI server with standard extras
+python-multipart==0.0.6     # File upload handling for FastAPI
+jinja2==3.1.2               # HTML templating for web UI
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Database
+sqlalchemy==2.0.25
+alembic==1.13.1
+
+# Document processing
+pdfminer.six==20231228     # REQUIRED: PDF text extraction for PDF file uploads
+Pillow==10.2.0             # OPTIONAL: Image processing
+python-docx==1.1.0         # REQUIRED: DOCX file processing
+markdown==3.5.2            # REQUIRED: Markdown file processing
+
+# PDF generation
+weasyprint==60.2           # REQUIRED: PDF rendering and generation
+cffi==1.16.0               # REQUIRED: C foreign function interface for weasyprint
+cairocffi==1.6.1           # REQUIRED: Cairo graphics library for PDF rendering
+
+# Google Cloud
+google-cloud-secret-manager==2.18.2
+google-auth==2.27.0
+
+# Authentication
+firebase-admin==6.4.0
+PyJWT==2.8.0
+python-jose[cryptography]==3.3.0
+
+# Stripe
+stripe==8.2.0
+
+# Utilities
+python-dotenv==1.0.1
+requests==2.31.0
+aiofiles==23.2.1
+httpx==0.26.0
+
+# AI Structure Detection
+openai==1.12.0  # GPT-4/3.5 for intelligent structure detection
+tiktoken==0.5.2  # Token counting for cost estimation
+tenacity==8.2.3  # Retry logic for API resilience
+
+# Testing (optional for Phase 1)
+# pytest==7.4.4
+# pytest-asyncio==0.23.3
+
+# POC Dependencies - Document Processing and Validation
+beautifulsoup4==4.12.3  # REQUIRED: HTML parsing for DOCX/Pandoc conversion and EPUB generation
+lxml==5.1.0             # REQUIRED: XML/HTML processing for EPUB OPF manipulation and validation
+pypdf==4.0.1            # REQUIRED: PDF validation and analysis
+jsonschema==4.21.1      # REQUIRED: JSON validation for IDM schema compliance
+
+# EPUB generation and validation
+# Note: epubcheck is a Java tool installed separately via scripts/install_system_deps.sh
+# Note: Kindle Previewer 3 is installed separately for manual testing (GUI-only, Windows/Mac)

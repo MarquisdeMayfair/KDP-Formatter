@@ -1,0 +1,228 @@
+/*
+ * KDP Formatter POC Stylesheet
+ * KDP-compatible CSS for print-on-demand formatting
+ */
+
+/* Import fonts - adjust paths as needed for local fonts */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+/* Use local fonts if available, fallback to web fonts */
+@font-face {
+    font-family: 'Bookerly';
+    src: local('Bookerly Regular'), local('Bookerly-Regular'),
+         url('fonts/Bookerly-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Bookerly';
+    src: local('Bookerly Italic'), local('Bookerly-Italic'),
+         url('fonts/Bookerly-Italic.ttf') format('truetype');
+    font-weight: normal;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Bookerly';
+    src: local('Bookerly Bold'), local('Bookerly-Bold'),
+         url('fonts/Bookerly-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* Page setup for KDP */
+@page {
+    size: 6in 9in;  /* Standard KDP paperback size */
+    margin: 0.75in 0.75in 0.75in 0.75in;  /* Standard margins */
+
+    /* Headers and footers */
+    @top-center {
+        content: string(title);
+        font-size: 9pt;
+        font-family: sans-serif;
+        color: #666;
+    }
+
+    @bottom-center {
+        content: counter(page);
+        font-size: 9pt;
+        font-family: sans-serif;
+        color: #666;
+    }
+}
+
+/* Page breaks */
+/* page-break-before: always ensures each chapter starts on a new page per KDP standards */
+.chapter {
+    page-break-before: always;  /* KDP requirement: chapters must start on new pages */
+}
+
+/* Body text */
+body {
+    font-family: 'Bookerly', 'Libre Baskerville', 'Crimson Text', serif;
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #000;
+    margin: 0;
+    padding: 0;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    word-wrap: break-word;
+    orphans: 3;
+    widows: 3;
+}
+
+/* Headings */
+h1, h2, h3 {
+    font-family: 'Bookerly', 'Libre Baskerville', 'Crimson Text', serif;
+    font-weight: bold;
+    color: #000;
+    text-align: center;
+    page-break-after: avoid;
+}
+
+h1 {
+    font-size: 18pt;
+    line-height: 1.2;
+    margin-top: 2em;
+    margin-bottom: 1.5em;
+}
+
+h2 {
+    font-size: 14pt;
+    line-height: 1.3;
+    margin-top: 1.5em;
+    margin-bottom: 1em;
+}
+
+h3 {
+    font-size: 12pt;
+    line-height: 1.3;
+    margin-top: 1.2em;
+    margin-bottom: 0.8em;
+}
+
+/* Chapter titles */
+.chapter-title {
+    font-size: 18pt;
+    font-weight: bold;
+    margin-top: 2em;
+    margin-bottom: 1.5em;
+    text-align: center;
+    page-break-after: avoid;
+}
+
+/* Paragraphs */
+/* orphans: 3 and widows: 3 ensure no single-line orphans or widows per KDP standards */
+/* This prevents unprofessional single-line pages that violate KDP best practices */
+/* KDP standard: indentation only, no spacing between paragraphs (traditional book formatting) */
+p {
+    margin: 0;
+    text-indent: 0.25in;  /* Standard first-line indent per KDP guidelines */
+    text-align: justify;
+    text-justify: inter-word;
+    orphans: 3;  /* KDP requirement: minimum 3 lines prevents single-line orphans */
+    widows: 3;   /* KDP requirement: minimum 3 lines prevents single-line widows */
+}
+
+/* Modern paragraph spacing (optional, not traditional KDP) */
+body.use-paragraph-spacing p {
+    margin-bottom: 0.5em;
+}
+
+body.use-paragraph-spacing p.first-para,
+body.use-paragraph-spacing .chapter > .chapter-title + p,
+body.use-paragraph-spacing .chapter > h1 + p,
+body.use-paragraph-spacing .chapter > h2 + p,
+body.use-paragraph-spacing .chapter > h3 + p,
+body.use-paragraph-spacing .front-matter p,
+body.use-paragraph-spacing .back-matter p {
+    margin-bottom: 0.5em;
+}
+
+/* First paragraph after headings: no indent (KDP standard)
+ * Use higher specificity to override general p rule
+ * KDP books use indentation without spacing - first paragraphs after headings have no indent */
+.chapter p.first-para,
+.chapter > .chapter-title + p,
+.chapter > h1 + p,
+.chapter > h2 + p,
+.chapter > h3 + p {
+    text-indent: 0 !important;
+}
+
+/* Disable indentation entirely (optional, for non-KDP use) */
+body.no-indent p {
+    text-indent: 0 !important;
+}
+
+/* Blockquotes */
+/* page-break-inside: avoid prevents blockquotes from breaking awkwardly across pages */
+blockquote {
+    margin: 1em 1.5em;
+    padding: 0.5em 1em;
+    font-style: italic;
+    border-left: 3px solid #ccc;
+    background-color: #f9f9f9;
+    page-break-inside: avoid;  /* Prevent awkward breaks within blockquotes */
+}
+
+blockquote p { text-indent: 0; }
+
+/* Front and back matter */
+.front-matter, .back-matter {
+    text-align: center;
+}
+
+.front-matter p, .back-matter p {
+    text-indent: 0;
+    margin: 0.5em 0;
+}
+
+/* Special styling */
+.emphasis {
+    font-style: italic;
+}
+
+.strong {
+    font-weight: bold;
+}
+
+/* Drop caps for chapter starts (optional - controlled by .use-drop-caps class) */
+.chapter.use-drop-caps p:first-of-type::first-letter {
+    float: left;
+    font-size: 2.3em;  /* Reduced for better proportions and less overlap */
+    line-height: 1.0;  /* Increased to prevent overlap with line below */
+    margin: 0.05em 0.15em 0 0;  /* Better spacing for text flow */
+    padding-top: 0.05em;  /* Lift drop cap slightly for better alignment */
+    font-weight: bold;
+}
+
+/* Ensure proper spacing */
+* {
+    box-sizing: border-box;
+}
+
+/* Print-specific optimizations */
+/* These rules reinforce KDP compliance during PDF generation and printing */
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        orphans: 3;  /* KDP requirement: prevent single-line orphans in print */
+        widows: 3;   /* KDP requirement: prevent single-line widows in print */
+    }
+
+    /* Ensure no unwanted page breaks */
+    h1, h2, h3, .chapter-title {
+        page-break-after: avoid;  /* Prevent headings from being widowed */
+    }
+
+    p { page-break-inside: avoid; }
+
+    blockquote {
+        page-break-inside: avoid;  /* Prevent blockquotes from breaking across pages */
+    }
+}
