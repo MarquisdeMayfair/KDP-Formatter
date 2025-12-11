@@ -225,6 +225,11 @@ class PDFRenderer:
                 html_parts.append('</ul>')
             return ''.join(html_parts)
 
+        # Skip lone bullet/emoji markers used as decoration
+        lone_markers = {'•', '●', '○', '◦', '▪', '▫', '➤', '➜', '✔', '❖', '♦', '❤', '❤️', '🖤'}
+        if normalized_text.strip() in lone_markers:
+            return ''
+
         # Escape HTML entities for normal paragraphs
         text = normalized_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
