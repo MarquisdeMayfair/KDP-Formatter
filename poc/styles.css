@@ -3,33 +3,7 @@
  * KDP-compatible CSS for print-on-demand formatting
  */
 
-/* Import fonts - adjust paths as needed for local fonts */
-@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
-
-/* Use local fonts if available, fallback to web fonts */
-@font-face {
-    font-family: 'Bookerly';
-    src: local('Bookerly Regular'), local('Bookerly-Regular'),
-         url('fonts/Bookerly-Regular.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-
-@font-face {
-    font-family: 'Bookerly';
-    src: local('Bookerly Italic'), local('Bookerly-Italic'),
-         url('fonts/Bookerly-Italic.ttf') format('truetype');
-    font-weight: normal;
-    font-style: italic;
-}
-
-@font-face {
-    font-family: 'Bookerly';
-    src: local('Bookerly Bold'), local('Bookerly-Bold'),
-         url('fonts/Bookerly-Bold.ttf') format('truetype');
-    font-weight: bold;
-    font-style: normal;
-}
+/* Use system-safe serif fonts only (no external font downloads) */
 
 /* Page setup for KDP - Following KDP Guidelines */
 /* 6x9 trim size - 76 pages needs gutter ≥ 0.375", outside ≥ 0.25" */
@@ -57,7 +31,7 @@
 
 /* Body text - Following KDP Guidelines */
 body {
-    font-family: 'Georgia', 'Times New Roman', serif;
+    font-family: 'Times New Roman', serif;
     font-size: 10.5pt;
     line-height: 1.45;
     color: #000;
@@ -75,7 +49,7 @@ body {
 
 /* Headings */
 h1, h2, h3 {
-    font-family: 'Bookerly', 'Libre Baskerville', 'Crimson Text', serif;
+    font-family: 'Times New Roman', serif;
     font-weight: bold;
     color: #000;
     text-align: center;
