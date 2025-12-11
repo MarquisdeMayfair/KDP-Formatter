@@ -174,22 +174,24 @@ class PDFRenderer:
 
         # Normalize decorative markers to a plain bullet to avoid odd glyphs
         marker_map = {
-            '●': '•',
-            '○': '•',
-            '◦': '•',
-            '▪': '•',
-            '▫': '•',
-            '➤': '•',
-            '➜': '•',
-            '✔': '•',
-            '❖': '•',
-            '♦': '•',
-            '❤': '•',
-            '❤️': '•',
-            '🖤': '•',
+            '●': '',
+            '○': '',
+            '◦': '',
+            '▪': '',
+            '▫': '',
+            '➤': '',
+            '➜': '',
+            '✔': '',
+            '❖': '',
+            '♦': '',
+            '❤': '',
+            '❤️': '',
+            '🖤': '',
         }
         if normalized_text.strip() in marker_map:
             normalized_text = marker_map[normalized_text.strip()]
+        if not normalized_text.strip():
+            return ''
 
         # Determine tag based on style
         tag_map = {
@@ -243,11 +245,6 @@ class PDFRenderer:
                     html_parts.append(f'<li>{safe_item}</li>')
                 html_parts.append('</ul>')
             return ''.join(html_parts)
-
-        # If text is now just a bullet, render as a simple bullet paragraph
-        if normalized_text.strip() == '•':
-            safe_bullet = '&#8226;'
-            return f'<p{class_attr}{style_attr}>{safe_bullet}</p>'
 
         # Escape HTML entities for normal paragraphs
         text = normalized_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
