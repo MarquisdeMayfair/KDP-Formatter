@@ -172,6 +172,25 @@ class PDFRenderer:
         """Convert IDM paragraph to HTML"""
         normalized_text = self._normalize_text(paragraph.text or "")
 
+        # Normalize decorative markers to a plain bullet to avoid odd glyphs
+        marker_map = {
+            '●': '•',
+            '○': '•',
+            '◦': '•',
+            '▪': '•',
+            '▫': '•',
+            '➤': '•',
+            '➜': '•',
+            '✔': '•',
+            '❖': '•',
+            '♦': '•',
+            '❤': '•',
+            '❤️': '•',
+            '🖤': '•',
+        }
+        if normalized_text.strip() in marker_map:
+            normalized_text = marker_map[normalized_text.strip()]
+
         # Determine tag based on style
         tag_map = {
             'normal': 'p',
@@ -225,10 +244,10 @@ class PDFRenderer:
                 html_parts.append('</ul>')
             return ''.join(html_parts)
 
-        # Skip lone bullet/emoji markers used as decoration
-        lone_markers = {'•', '●', '○', '◦', '▪', '▫', '➤', '➜', '✔', '❖', '♦', '❤', '❤️', '🖤'}
-        if normalized_text.strip() in lone_markers:
-            return ''
+        # If text is now just a bullet, render as a simple bullet paragraph
+        if normalized_text.strip() == '•':
+            safe_bullet = '&#8226;'
+            return f'<p{class_attr}{style_attr}>{safe_bullet}</p>'
 
         # Escape HTML entities for normal paragraphs
         text = normalized_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
