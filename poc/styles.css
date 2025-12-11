@@ -31,25 +31,22 @@
     font-style: normal;
 }
 
-/* Page setup for KDP */
+/* Page setup for KDP - Following KDP Guidelines */
+/* 6x9 trim size - 76 pages needs gutter ≥ 0.375", outside ≥ 0.25" */
+/* Using larger margins to ensure text stays within bounds */
 @page {
-    size: 6in 9in;  /* Standard KDP paperback size */
-    margin: 0.75in 0.75in 0.75in 0.75in;  /* Standard margins */
+    size: 6in 9in;
+    margin: 0.75in 0.75in 0.75in 0.85in;  /* top right bottom left (gutter) */
+}
 
-    /* Headers and footers */
-    @top-center {
-        content: string(title);
-        font-size: 9pt;
-        font-family: sans-serif;
-        color: #666;
-    }
+/* Left-hand pages (verso) - gutter is on RIGHT side */
+@page :left {
+    margin: 0.75in 0.85in 0.75in 0.75in;
+}
 
-    @bottom-center {
-        content: counter(page);
-        font-size: 9pt;
-        font-family: sans-serif;
-        color: #666;
-    }
+/* Right-hand pages (recto) - gutter is on LEFT side */
+@page :right {
+    margin: 0.75in 0.75in 0.75in 0.85in;
 }
 
 /* Page breaks */
@@ -58,18 +55,20 @@
     page-break-before: always;  /* KDP requirement: chapters must start on new pages */
 }
 
-/* Body text */
+/* Body text - Following KDP Guidelines */
 body {
-    font-family: 'Bookerly', 'Libre Baskerville', 'Crimson Text', serif;
-    font-size: 11pt;
-    line-height: 1.4;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 10.5pt;
+    line-height: 1.45;
     color: #000;
     margin: 0;
     padding: 0;
-    text-align: justify;
-    text-justify: inter-word;
-    hyphens: auto;
-    word-wrap: break-word;
+    text-align: left;
+    hyphens: none;
+    -webkit-hyphens: none;
+    -ms-hyphens: none;
+    word-break: normal;
+    overflow-wrap: normal;
     orphans: 3;
     widows: 3;
 }
@@ -115,16 +114,26 @@ h3 {
 }
 
 /* Paragraphs */
-/* orphans: 3 and widows: 3 ensure no single-line orphans or widows per KDP standards */
-/* This prevents unprofessional single-line pages that violate KDP best practices */
-/* KDP standard: indentation only, no spacing between paragraphs (traditional book formatting) */
+/* Block-style formatting: no indentation, spacing between paragraphs */
+/* This modern style is accepted by KDP and works well for letter-format books */
 p {
-    margin: 0;
-    text-indent: 0.25in;  /* Standard first-line indent per KDP guidelines */
-    text-align: justify;
-    text-justify: inter-word;
+    margin: 0 0 0.8em 0;
+    text-indent: 0;  /* No indentation - clean block style */
+    text-align: left;
+    line-height: 1.5;
     orphans: 3;  /* KDP requirement: minimum 3 lines prevents single-line orphans */
     widows: 3;   /* KDP requirement: minimum 3 lines prevents single-line widows */
+}
+
+/* Bullet lists parsed from inline bullet markers */
+ul.bullet-list {
+    margin: 0 0 0.8em 1.2em;
+    padding-left: 1em;
+    list-style-type: disc;
+}
+
+ul.bullet-list li {
+    margin: 0 0 0.4em 0;
 }
 
 /* Modern paragraph spacing (optional, not traditional KDP) */
@@ -179,6 +188,43 @@ blockquote p { text-indent: 0; }
 .front-matter p, .back-matter p {
     text-indent: 0;
     margin: 0.5em 0;
+}
+
+/* Chapter subtitle (e.g., "Disconnected (My first signs of FND)") */
+p.subtitle {
+    text-indent: 0;
+    margin: 0 0 1em 0;
+    font-style: italic;
+    font-size: 1em;
+}
+
+/* Letter greeting (e.g., "Dear Me,") */
+p.greeting {
+    text-indent: 0;
+    margin: 1.2em 0 0.8em 0;
+    font-style: normal;
+}
+
+/* Letter closing/signature */
+p.closing {
+    text-indent: 0;
+    margin: 1.5em 0 0.5em 0;
+}
+
+p.signature {
+    text-indent: 0;
+    margin: 1.5em 0 0.5em 0;
+    text-align: right;
+    font-style: italic;
+}
+
+/* Emphasis text (centered, bold) */
+p.emphasis {
+    text-indent: 0;
+    margin: 1em 0;
+    text-align: center;
+    font-weight: bold;
+    font-style: italic;
 }
 
 /* Special styling */

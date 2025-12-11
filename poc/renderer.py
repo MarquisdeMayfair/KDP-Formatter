@@ -52,6 +52,13 @@ class PDFRenderer:
         self.use_paragraph_spacing = use_paragraph_spacing
         self.disable_indentation = disable_indentation
 
+    @staticmethod
+    def _normalize_text(text: str) -> str:
+        """Normalize text to improve wrapping and rendering."""
+        if text is None:
+            return ""
+        return text.replace('\u00a0', ' ')
+
     def render_to_pdf(self, document: IDMDocument, output_path: str):
         """
         Render IDM document to PDF
@@ -100,7 +107,8 @@ class PDFRenderer:
 <body{body_class_attr}>
 """.format(
             author=document.metadata.author or "Unknown Author",
-            title=document.metadata.title or "Untitled"
+            title=document.metadata.title or "Untitled",
+            body_class_attr=body_class_attr
         ))
 
         # Front matter
@@ -114,7 +122,8 @@ class PDFRenderer:
         for chapter in document.chapters:
             chapter_class = f'chapter{" use-drop-caps" if self.use_drop_caps else ""}'
             html_parts.append(f'<div class="{chapter_class}">')
-            html_parts.append(f'<h1 class="chapter-title">{chapter.title}</h1>')
+            chapter_title = self._normalize_text(getattr(chapter, "title", "") or "")
+            html_parts.append(f'<h1 class="chapter-title">{chapter_title}</h1>')
 
             # Track if previous block was a heading (chapter title counts as heading)
             previous_block_was_heading = True
@@ -161,10 +170,16 @@ class PDFRenderer:
 
     def _paragraph_to_html(self, paragraph: IDMParagraph, is_first_after_heading: bool = False) -> str:
         """Convert IDM paragraph to HTML"""
+        normalized_text = self._normalize_text(paragraph.text or "")
+
         # Determine tag based on style
         tag_map = {
             'normal': 'p',
-            'blockquote': 'blockquote'
+            'blockquote': 'blockquote',
+            'greeting': 'p',
+            'closing': 'p',
+            'signature': 'p',
+            'subtitle': 'p'
         }
 
         tag = tag_map.get(paragraph.style, 'p')
@@ -173,6 +188,10 @@ class PDFRenderer:
         classes = []
         if is_first_after_heading:
             classes.append('first-para')
+        
+        # Add style-specific classes
+        if paragraph.style in ('greeting', 'closing', 'signature', 'subtitle', 'emphasis'):
+            classes.append(paragraph.style)
 
         class_attr = f' class="{" ".join(classes)}"' if classes else ''
 
@@ -188,51 +207,53 @@ class PDFRenderer:
 
         style_attr = f' style="{"; ".join(styles)}"' if styles else ''
 
-        # Escape HTML entities
-        text = paragraph.text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        # Bullet handling: if paragraph contains bullet markers, render as list
+        if '•' in normalized_text:
+            parts = [p.strip() for p in normalized_text.split('•')]
+            preface = parts[0].strip()
+            items = [p for p in parts[1:] if p.strip()]
+
+            html_parts = []
+            if preface:
+                text_preface = preface.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                html_parts.append(f'<p{class_attr}{style_attr}>{text_preface}</p>')
+            if items:
+                html_parts.append('<ul class="bullet-list">')
+                for item in items:
+                    safe_item = item.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                    html_parts.append(f'<li>{safe_item}</li>')
+                html_parts.append('</ul>')
+            return ''.join(html_parts)
+
+        # Escape HTML entities for normal paragraphs
+        text = normalized_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
         return f'<{tag}{class_attr}{style_attr}>{text}</{tag}>'
 
     def _heading_to_html(self, heading: IDMHeading) -> str:
         """Convert IDM heading to HTML"""
         tag = f'h{heading.level}'
-        # Escape HTML entities
-        text = heading.text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        # Escape HTML entities and normalize non-breaking spaces
+        text = self._normalize_text(heading.text).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         return f'<{tag}>{text}</{tag}>'
 
     def _quote_to_html(self, quote: IDMQuote) -> str:
         """Convert IDM quote to HTML"""
-        # Escape HTML entities
-        text = quote.text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        # Escape HTML entities and normalize non-breaking spaces
+        text = self._normalize_text(quote.text).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         cite_attr = f' cite="{quote.attribution}"' if quote.attribution else ''
         return f'<blockquote{cite_attr}><p>{text}</p></blockquote>'
 
     def _load_css(self) -> str:
-        """Load CSS content with dynamic page size and margin configuration"""
+        """Load CSS content - use CSS file settings directly for KDP compliance"""
         base_css = ""
         if os.path.exists(self.css_path):
             with open(self.css_path, 'r', encoding='utf-8') as f:
                 base_css = f.read()
 
-        # Page size mapping
-        page_size_map = {
-            "6x9": "6in 9in",
-            "8.5x11": "8.5in 11in"
-        }
-
-        # Generate dynamic @page rule
-        page_size_css = page_size_map.get(self.page_size, "6in 9in")
-        margin_css = f"{self.margins}in"
-
-        dynamic_css = f"""
-@page {{
-    size: {page_size_css};
-    margin: {margin_css};
-}}
-"""
-
-        # Combine dynamic CSS with base CSS
-        return base_css + dynamic_css
+        # Return base CSS only - margins are defined in styles.css for KDP compliance
+        # Do NOT add dynamic @page rules as they override the careful margin settings
+        return base_css
 
 
 def render_document_to_pdf(document: IDMDocument, output_path: str, css_path: Optional[str] = None, use_drop_caps: bool = False, page_size: str = "6x9", margins: float = 0.75,
