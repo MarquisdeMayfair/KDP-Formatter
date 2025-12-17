@@ -1,7 +1,8 @@
 """
 PDF Renderer for KDP Formatter POC
 
-This module renders IDM documents to PDF using WeasyPrint with KDP-compatible styling.
+This module renders IDM documents to PDF using ReportLab (primary) or WeasyPrint (legacy).
+ReportLab generates simpler, more KDP-compatible PDFs.
 """
 
 import os
@@ -17,9 +18,219 @@ except ImportError:
     CSS = None
 
 try:
+    from reportlab.lib.pagesizes import inch
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, PageBreak, Spacer
+    from reportlab.lib.units import inch as rl_inch
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
+
+try:
     from .idm_schema import IDMDocument, IDMChapter, IDMParagraph, IDMHeading, IDMQuote
 except ImportError:
     from idm_schema import IDMDocument, IDMChapter, IDMParagraph, IDMHeading, IDMQuote
+
+
+class ReportLabPDFRenderer:
+    """KDP-compatible PDF renderer using ReportLab (recommended)"""
+
+    # Page sizes in inches
+    PAGE_SIZES = {
+        '6x9': (6, 9),
+        '5x8': (5, 8),
+        '5.5x8.5': (5.5, 8.5),
+        '8.5x11': (8.5, 11),
+    }
+
+    def __init__(self, page_size: str = "6x9", margins: float = 0.75):
+        """
+        Initialize ReportLab renderer
+
+        Args:
+            page_size: Page size ('6x9', '5x8', '5.5x8.5', or '8.5x11')
+            margins: Margin size in inches
+        """
+        if not REPORTLAB_AVAILABLE:
+            raise ImportError("reportlab is required for PDF rendering. Install with: pip install reportlab")
+
+        self.page_size = page_size
+        self.margins = margins
+        self._register_fonts()
+
+    def _register_fonts(self):
+        """Register embedded fonts for PDF generation"""
+        # Use Source Serif 4 fonts from the project
+        fonts_dir = os.path.join(os.path.dirname(__file__), 'fonts')
+        serif_regular = os.path.join(fonts_dir, 'SourceSerif4-Regular.ttf')
+        serif_bold = os.path.join(fonts_dir, 'SourceSerif4-Semibold.ttf')
+
+        if os.path.exists(serif_regular) and os.path.exists(serif_bold):
+            try:
+                pdfmetrics.registerFont(TTFont('SourceSerif', serif_regular))
+                pdfmetrics.registerFont(TTFont('SourceSerifBold', serif_bold))
+                self.font_regular = 'SourceSerif'
+                self.font_bold = 'SourceSerifBold'
+            except Exception:
+                self.font_regular = 'Times-Roman'
+                self.font_bold = 'Times-Bold'
+        else:
+            # Fallback to standard PDF fonts
+            self.font_regular = 'Times-Roman'
+            self.font_bold = 'Times-Bold'
+
+    @staticmethod
+    def _normalize_text(text: str) -> str:
+        """Normalize text to ASCII-safe characters for maximum KDP compatibility"""
+        if not text:
+            return ""
+
+        replacements = {
+            '\xa0': ' ',      # Non-breaking space
+            '\u2018': "'",    # Left single quote
+            '\u2019': "'",    # Right single quote
+            '\u201c': '"',    # Left double quote
+            '\u201d': '"',    # Right double quote
+            '\u2013': '-',    # En dash
+            '\u2014': '--',   # Em dash
+            '\u2026': '...',  # Ellipsis
+            '\u2022': '-',    # Bullet
+            '\u25CF': '*',    # Black circle
+            '\u25CB': 'o',    # White circle
+            '\u2192': '->',   # Right arrow
+            '\u2190': '<-',   # Left arrow
+        }
+        for orig, repl in replacements.items():
+            text = text.replace(orig, repl)
+
+        # Remove emojis and high unicode (keep Latin-1 range)
+        text = ''.join(c for c in text if ord(c) < 256)
+        return text
+
+    def render_to_pdf(self, document: IDMDocument, output_path: str):
+        """
+        Render IDM document to KDP-compatible PDF
+
+        Args:
+            document: IDM document to render
+            output_path: Path for output PDF file
+        """
+        # Get page dimensions
+        width_in, height_in = self.PAGE_SIZES.get(self.page_size, (6, 9))
+        page_width = width_in * rl_inch
+        page_height = height_in * rl_inch
+        margin = self.margins * rl_inch
+
+        # Create document
+        doc = SimpleDocTemplate(
+            output_path,
+            pagesize=(page_width, page_height),
+            leftMargin=margin,
+            rightMargin=margin,
+            topMargin=margin,
+            bottomMargin=margin,
+            title=self._normalize_text(document.metadata.title or 'Untitled'),
+            author=self._normalize_text(document.metadata.author or 'Unknown Author'),
+        )
+
+        # Define styles
+        title_style = ParagraphStyle(
+            'ChapterTitle',
+            fontSize=18,
+            alignment=TA_CENTER,
+            spaceAfter=30,
+            spaceBefore=50,
+            fontName=self.font_bold,
+            leading=22
+        )
+
+        body_style = ParagraphStyle(
+            'BodyText',
+            fontSize=11,
+            alignment=TA_LEFT,
+            spaceAfter=0,
+            spaceBefore=0,
+            fontName=self.font_regular,
+            leading=16,
+            firstLineIndent=24
+        )
+
+        first_para_style = ParagraphStyle(
+            'FirstPara',
+            parent=body_style,
+            firstLineIndent=0
+        )
+
+        blockquote_style = ParagraphStyle(
+            'BlockQuote',
+            fontSize=10,
+            alignment=TA_LEFT,
+            spaceAfter=12,
+            spaceBefore=12,
+            fontName=self.font_regular,
+            leading=14,
+            leftIndent=36,
+            rightIndent=36
+        )
+
+        # Build story (content)
+        story = []
+
+        for i, chapter in enumerate(document.chapters):
+            if i > 0:
+                story.append(PageBreak())
+
+            # Chapter title
+            title = self._normalize_text(chapter.title or 'Untitled')
+            story.append(Paragraph(self._escape_xml(title), title_style))
+
+            # Track first paragraph
+            is_first_para = True
+
+            # Get blocks
+            blocks = getattr(chapter, 'blocks', None) or getattr(chapter, 'paragraphs', [])
+
+            for block in blocks:
+                if isinstance(block, IDMParagraph):
+                    text = self._normalize_text(block.text or '')
+                    if not text.strip():
+                        continue
+
+                    # Skip decorative markers
+                    if text.strip() in ['*', '-', 'o', '']:
+                        continue
+
+                    escaped_text = self._escape_xml(text)
+
+                    if block.style == 'blockquote':
+                        story.append(Paragraph(escaped_text, blockquote_style))
+                    elif is_first_para:
+                        story.append(Paragraph(escaped_text, first_para_style))
+                        is_first_para = False
+                    else:
+                        story.append(Paragraph(escaped_text, body_style))
+
+                elif isinstance(block, IDMHeading):
+                    text = self._normalize_text(block.text or '')
+                    if text.strip():
+                        story.append(Paragraph(self._escape_xml(text), title_style))
+                        is_first_para = True  # Next para has no indent
+
+                elif isinstance(block, IDMQuote):
+                    text = self._normalize_text(block.text or '')
+                    if text.strip():
+                        story.append(Paragraph(self._escape_xml(text), blockquote_style))
+
+        # Build PDF
+        doc.build(story)
+
+    @staticmethod
+    def _escape_xml(text: str) -> str:
+        """Escape XML special characters for ReportLab"""
+        return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 
 class PDFRenderer:
@@ -54,14 +265,57 @@ class PDFRenderer:
 
     @staticmethod
     def _normalize_text(text: str) -> str:
-        """Normalize text to improve wrapping and rendering."""
+        """Normalize text to improve wrapping and rendering for KDP compatibility."""
         if text is None:
             return ""
-        return text.replace('\u00a0', ' ')
+        # Replace non-breaking spaces
+        text = text.replace('\u00a0', ' ')
+        
+        # Replace problematic Unicode symbols with ASCII equivalents
+        # These characters can trigger fallback fonts (like Hiragino) which KDP may reject
+        replacements = {
+            '\u25CF': '*',      # BLACK CIRCLE -> asterisk
+            '\u25CB': 'o',      # WHITE CIRCLE -> lowercase o
+            '\u25E6': '-',      # WHITE BULLET -> hyphen
+            '\u25AA': '-',      # BLACK SMALL SQUARE -> hyphen
+            '\u25AB': '-',      # WHITE SMALL SQUARE -> hyphen
+            '\u2192': '->',     # RIGHTWARDS ARROW -> ASCII arrow
+            '\u2190': '<-',     # LEFTWARDS ARROW -> ASCII arrow
+            '\u2191': '^',      # UPWARDS ARROW -> caret
+            '\u2193': 'v',      # DOWNWARDS ARROW -> v
+            '\u2022': '-',      # BULLET -> hyphen
+            '\u2026': '...',    # HORIZONTAL ELLIPSIS -> three dots
+            '\u2014': '--',     # EM DASH -> double hyphen
+            '\u2013': '-',      # EN DASH -> hyphen
+            '\u2018': "'",      # LEFT SINGLE QUOTE -> ASCII apostrophe
+            '\u2019': "'",      # RIGHT SINGLE QUOTE -> ASCII apostrophe
+            '\u201C': '"',      # LEFT DOUBLE QUOTE -> ASCII quote
+            '\u201D': '"',      # RIGHT DOUBLE QUOTE -> ASCII quote
+        }
+        for orig, repl in replacements.items():
+            text = text.replace(orig, repl)
+        
+        # Remove ALL emoji characters to prevent Color Emoji font embedding (KDP rejection)
+        import re
+        emoji_pattern = re.compile(
+            "["
+            "\U0001F300-\U0001F9FF"  # Misc Symbols, Emoticons, Dingbats, etc.
+            "\U00002702-\U000027B0"  # Dingbats
+            "\U0001F600-\U0001F64F"  # Emoticons
+            "\U0001F680-\U0001F6FF"  # Transport & Map
+            "\U00002600-\U000026FF"  # Misc symbols
+            "\U0001FA00-\U0001FAFF"  # Extended symbols
+            "\U00002500-\U000025FF"  # Box drawing, block elements
+            "\U00002190-\U000021FF"  # Arrows (any we missed)
+            "]+", 
+            flags=re.UNICODE
+        )
+        text = emoji_pattern.sub('', text)
+        return text
 
     def render_to_pdf(self, document: IDMDocument, output_path: str):
         """
-        Render IDM document to PDF
+        Render IDM document to PDF (legacy WeasyPrint renderer)
 
         Args:
             document: IDM document to render
@@ -278,7 +532,7 @@ class PDFRenderer:
 
 
 def render_document_to_pdf(document: IDMDocument, output_path: str, css_path: Optional[str] = None, use_drop_caps: bool = False, page_size: str = "6x9", margins: float = 0.75,
-                          use_paragraph_spacing: bool = False, disable_indentation: bool = False):
+                          use_paragraph_spacing: bool = False, disable_indentation: bool = False, use_reportlab: bool = True):
     """
     Convenience function to render IDM document to PDF
 
@@ -291,6 +545,11 @@ def render_document_to_pdf(document: IDMDocument, output_path: str, css_path: Op
         margins: Margin size in inches (applied to all sides)
         use_paragraph_spacing: Whether to add spacing between paragraphs (not traditional KDP)
         disable_indentation: Whether to disable all paragraph indentation (not traditional KDP)
+        use_reportlab: Use ReportLab renderer (recommended for KDP compatibility, default True)
     """
-    renderer = PDFRenderer(css_path, use_drop_caps, page_size, margins, use_paragraph_spacing, disable_indentation)
-    renderer.render_to_pdf(document, output_path)
+    if use_reportlab and REPORTLAB_AVAILABLE:
+        renderer = ReportLabPDFRenderer(page_size, margins)
+        renderer.render_to_pdf(document, output_path)
+    else:
+        renderer = PDFRenderer(css_path, use_drop_caps, page_size, margins, use_paragraph_spacing, disable_indentation)
+        renderer.render_to_pdf(document, output_path)

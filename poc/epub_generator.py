@@ -10,10 +10,19 @@ import re
 import subprocess
 import tempfile
 import zipfile
+import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from xml.dom import minidom
 from xml.etree import ElementTree as ET
+
+# #region agent log
+_DEBUG_LOG_PATH = "/Users/nik/Downloads/KDP-Formatter-main/.cursor/debug.log"
+def _debug_log(location, message, data=None, hypothesis_id=None):
+    import time
+    entry = {"location": location, "message": message, "data": data or {}, "hypothesisId": hypothesis_id, "timestamp": int(time.time()*1000), "sessionId": "debug-session"}
+    with open(_DEBUG_LOG_PATH, "a") as f: f.write(json.dumps(entry) + "\n")
+# #endregion
 
 try:
     from .idm_schema import IDMDocument, IDMChapter, IDMParagraph, IDMHeading, IDMQuote, IDMFootnote
@@ -51,6 +60,10 @@ class EPUBGenerator:
             use_paragraph_spacing: Whether to add spacing between paragraphs (not traditional KDP)
             disable_indentation: Whether to disable all paragraph indentation (not traditional KDP)
         """
+        # #region agent log
+        _debug_log("epub_generator.py:generate_epub:entry", "Starting EPUB generation", {"output_path": output_path, "num_chapters": len(document.chapters), "title": document.metadata.title}, "H1_structure")
+        # #endregion
+        
         # Store configuration options
         self.use_paragraph_spacing = use_paragraph_spacing
         self.disable_indentation = disable_indentation
@@ -60,6 +73,10 @@ class EPUBGenerator:
 
         # Generate semantic HTML5 content
         html_content = self._generate_html_content(document)
+        
+        # #region agent log
+        _debug_log("epub_generator.py:generate_epub:html_generated", "HTML content generated", {"html_length": len(html_content), "html_preview": html_content[:500], "html_tail": html_content[-300:]}, "H5_html")
+        # #endregion
 
         # Create metadata dictionary for Pandoc
         metadata = self._create_metadata_dict(document)
@@ -73,6 +90,10 @@ class EPUBGenerator:
         # Clean up temporary file if different from output
         if temp_epub_path != output_path:
             os.rename(temp_epub_path, output_path)
+        
+        # #region agent log
+        _debug_log("epub_generator.py:generate_epub:complete", "EPUB generation complete", {"final_path": output_path}, "H1_structure")
+        # #endregion
 
     def _generate_html_content(self, document: IDMDocument) -> str:
         """Generate semantic HTML5 content from IDM document"""
@@ -94,7 +115,7 @@ class EPUBGenerator:
     <title>{title}</title>
 </head>
 <body{body_class_attr}>
-""".format(title=document.metadata.title or "Untitled"))
+""".format(title=document.metadata.title or "Untitled", body_class_attr=body_class_attr))
 
         # Front matter
         if document.front_matter:
@@ -104,9 +125,16 @@ class EPUBGenerator:
             html_parts.append('</section>')
 
         # Chapters
-        for chapter in document.chapters:
+        for idx, chapter in enumerate(document.chapters):
+            # Normalize chapter title to remove non-breaking spaces
+            chapter_title = self._normalize_text(chapter.title)
+            
+            # #region agent log
+            blocks = getattr(chapter, 'blocks', None) or getattr(chapter, 'paragraphs', [])
+            _debug_log(f"epub_generator.py:chapter:{idx}", "Processing chapter", {"title": chapter_title, "orig_title_repr": repr(chapter.title), "num_blocks": len(blocks), "block_types": [type(b).__name__ for b in blocks[:5]]}, "H2_empty")
+            # #endregion
             html_parts.append(f'<section class="chapter" epub:type="chapter">')
-            html_parts.append(f'<h1 class="chapter-title">{self._escape_html(chapter.title)}</h1>')
+            html_parts.append(f'<h1 class="chapter-title">{self._escape_html(chapter_title)}</h1>')
 
             # Track if previous block was a heading (chapter title counts as heading)
             previous_block_was_heading = True
@@ -281,11 +309,18 @@ class EPUBGenerator:
 
     def _post_process_epub(self, epub_path: str) -> None:
         """Post-process EPUB for KDP compliance"""
+        # #region agent log
+        _debug_log("epub_generator.py:_post_process_epub:start", "Starting post-processing", {"epub_path": epub_path}, "H3_opf")
+        # #endregion
+        
         # Create temporary directory for EPUB contents
         with tempfile.TemporaryDirectory() as temp_dir:
             # Unzip EPUB
             with zipfile.ZipFile(epub_path, 'r') as epub_zip:
                 epub_zip.extractall(temp_dir)
+                # #region agent log
+                _debug_log("epub_generator.py:_post_process_epub:extracted", "EPUB extracted", {"files": epub_zip.namelist()}, "H3_opf")
+                # #endregion
 
             # Enhance OPF metadata
             self._enhance_opf_metadata(temp_dir)
@@ -301,6 +336,10 @@ class EPUBGenerator:
 
             # Re-zip as EPUB
             self._repackage_epub(temp_dir, epub_path)
+            
+            # #region agent log
+            _debug_log("epub_generator.py:_post_process_epub:complete", "Post-processing complete", {}, "H3_opf")
+            # #endregion
 
     def _enhance_opf_metadata(self, epub_dir: str) -> None:
         """Enhance OPF metadata for KDP compliance"""
@@ -508,8 +547,31 @@ class EPUBGenerator:
         except (subprocess.CalledProcessError, FileNotFoundError):
             raise RuntimeError("Pandoc is required for EPUB generation. Install Pandoc first.")
 
+    def _normalize_text(self, text: str) -> str:
+        """Normalize text by replacing problematic Unicode characters for KDP compatibility"""
+        # Replace non-breaking spaces with regular spaces (critical for KDP)
+        text = text.replace('\xa0', ' ')
+        # Replace other problematic Unicode whitespace
+        text = text.replace('\u2002', ' ')  # en space
+        text = text.replace('\u2003', ' ')  # em space
+        text = text.replace('\u2009', ' ')  # thin space
+        text = text.replace('\u200a', ' ')  # hair space
+        text = text.replace('\u200b', '')   # zero-width space
+        text = text.replace('\u00ad', '')   # soft hyphen
+        return text
+
     def _escape_html(self, text: str) -> str:
         """Escape HTML entities in text"""
+        # #region agent log
+        # Check for problematic characters
+        nbsp_count = text.count('\xa0')
+        if nbsp_count > 0:
+            _debug_log("epub_generator.py:_escape_html:nbsp", "Found non-breaking spaces BEFORE normalization", {"count": nbsp_count, "text_preview": repr(text[:100])}, "H1_chars")
+        # #endregion
+        
+        # Normalize text first to remove problematic Unicode characters
+        text = self._normalize_text(text)
+        
         return (text.replace('&', '&amp;')
                     .replace('<', '&lt;')
                     .replace('>', '&gt;')

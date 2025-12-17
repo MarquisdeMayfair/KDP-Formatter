@@ -21,9 +21,10 @@ python-docx==1.1.0         # REQUIRED: DOCX file processing
 markdown==3.5.2            # REQUIRED: Markdown file processing
 
 # PDF generation
-weasyprint==60.2           # REQUIRED: PDF rendering and generation
-cffi==1.16.0               # REQUIRED: C foreign function interface for weasyprint
-cairocffi==1.6.1           # REQUIRED: Cairo graphics library for PDF rendering
+reportlab==4.4.0           # REQUIRED: Primary PDF renderer (KDP-compatible, simple output)
+weasyprint==60.2           # OPTIONAL: Legacy PDF renderer (complex output, may cause KDP issues)
+cffi==1.16.0               # OPTIONAL: C foreign function interface for weasyprint
+cairocffi==1.6.1           # OPTIONAL: Cairo graphics library for weasyprint
 
 # Google Cloud
 google-cloud-secret-manager==2.18.2

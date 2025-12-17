@@ -10,10 +10,19 @@ This module provides converters for:
 import os
 import re
 import subprocess
+import json
 from pathlib import Path
 from typing import Optional, List
 from abc import ABC, abstractmethod
 import re
+
+# #region agent log
+_DEBUG_LOG_PATH = "/Users/nik/Downloads/KDP-Formatter-main/.cursor/debug.log"
+def _debug_log(location, message, data=None, hypothesis_id=None):
+    import time
+    entry = {"location": location, "message": message, "data": data or {}, "hypothesisId": hypothesis_id, "timestamp": int(time.time()*1000), "sessionId": "debug-session"}
+    with open(_DEBUG_LOG_PATH, "a") as f: f.write(json.dumps(entry) + "\n")
+# #endregion
 
 try:
     from pdfminer.high_level import extract_text
@@ -304,6 +313,43 @@ class TextConverter(BaseConverter):
 class PDFConverter(BaseConverter):
     """Converter for PDF files using pdfminer.six"""
 
+    def _normalize_text(self, text: str) -> str:
+        """Normalize text by replacing problematic characters"""
+        # #region agent log
+        orig_len = len(text)
+        nbsp_count = text.count('\xa0')
+        # #endregion
+        
+        # Replace non-breaking spaces with regular spaces (critical for KDP compatibility)
+        text = text.replace('\xa0', ' ')
+        # Replace other problematic Unicode whitespace
+        text = text.replace('\u2002', ' ')  # en space
+        text = text.replace('\u2003', ' ')  # em space
+        text = text.replace('\u2009', ' ')  # thin space
+        text = text.replace('\u200a', ' ')  # hair space
+        text = text.replace('\u200b', '')   # zero-width space
+        text = text.replace('\u00ad', '')   # soft hyphen
+        
+        # Remove ALL emoji characters to prevent Color Emoji font embedding (KDP rejection)
+        emoji_pattern = re.compile(
+            "["
+            "\U0001F300-\U0001F9FF"  # Misc Symbols, Emoticons, Dingbats, etc.
+            "\U00002702-\U000027B0"  # Dingbats
+            "\U0001F600-\U0001F64F"  # Emoticons
+            "\U0001F680-\U0001F6FF"  # Transport & Map
+            "\U00002600-\U000026FF"  # Misc symbols
+            "\U0001FA00-\U0001FAFF"  # Chess, extended symbols
+            "]+", 
+            flags=re.UNICODE
+        )
+        text = emoji_pattern.sub('', text)
+        
+        # #region agent log
+        _debug_log("converters.py:_normalize_text", "Text normalized", {"orig_len": orig_len, "nbsp_count": nbsp_count, "new_len": len(text)}, "H1_chars")
+        # #endregion
+        
+        return text
+
     def convert(self, input_path: str) -> IDMDocument:
         """Convert PDF file to IDM document"""
         if extract_text is None:
@@ -312,6 +358,9 @@ class PDFConverter(BaseConverter):
         # Extract text from PDF
         laparams = LAParams()
         text = extract_text(input_path, laparams=laparams)
+        
+        # Normalize text to remove problematic characters (critical for KDP)
+        text = self._normalize_text(text)
 
         # Create metadata
         metadata = IDMMetadata()
@@ -319,28 +368,148 @@ class PDFConverter(BaseConverter):
         metadata.title = filename.replace('_', ' ').title()
         metadata.word_count = len(text.split())
 
-        # Split into paragraphs (basic approach)
-        paragraphs = []
+        # Split into chapters with proper structure detection
+        chapters = []
         lines = text.split('\n')
+        
+        current_chapter = None
+        current_paragraphs = []
+        current_paragraph_lines = []
+        
+        # Chapter detection patterns
+        chapter_pattern = re.compile(
+            r'^(chapter|letter|part|section|foreword|prologue|epilogue|introduction|conclusion)\s*(\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|[a-z])?:?\s*$',
+            re.IGNORECASE
+        )
+        # Also detect standalone numbers like "1." or "Letter 3"
+        numbered_pattern = re.compile(r'^(\d+|[ivxlcdm]+)\.?\s*$', re.IGNORECASE)
+        letter_with_title = re.compile(r'^letter\s+\d+\s*$', re.IGNORECASE)
+        
+        # Greeting pattern for letters (e.g., "Dear Me,", "Dear Self,")
+        greeting_pattern = re.compile(r'^dear\s+[\w\s]+[,.]?\s*$', re.IGNORECASE)
+        
+        # Track if we just started a new chapter (to detect subtitle)
+        just_started_chapter = False
+        # Track if we're building a subtitle (can span multiple lines)
+        building_subtitle = False
 
-        current_paragraph = []
         for line in lines:
-            line = line.strip()
-            if not line:
-                if current_paragraph:
-                    paragraphs.append(IDMParagraph(text=' '.join(current_paragraph)))
-                    current_paragraph = []
+            stripped_line = line.strip()
+            
+            # Check if this is a chapter/letter header
+            is_chapter = (
+                chapter_pattern.match(stripped_line) or 
+                letter_with_title.match(stripped_line) or
+                (numbered_pattern.match(stripped_line) and len(stripped_line) < 10)
+            )
+            
+            if is_chapter:
+                # Flush current paragraph
+                if current_paragraph_lines:
+                    para_text = ' '.join(current_paragraph_lines)
+                    if para_text.strip():
+                        current_paragraphs.append(IDMParagraph(text=para_text))
+                    current_paragraph_lines = []
+                
+                # Save previous chapter
+                if current_chapter is not None:
+                    current_chapter.blocks = current_paragraphs
+                    chapters.append(current_chapter)
+                elif current_paragraphs:
+                    # Content before first chapter - treat as front matter or intro
+                    intro_chapter = IDMChapter(title="Introduction", blocks=current_paragraphs)
+                    chapters.append(intro_chapter)
+                
+                # Start new chapter
+                current_chapter = IDMChapter(
+                    title=stripped_line,
+                    number=len(chapters) + 1
+                )
+                current_paragraphs = []
+                just_started_chapter = True
+                
+            elif stripped_line:
+                # Check if it's a greeting line (should be its own paragraph)
+                if greeting_pattern.match(stripped_line):
+                    # Flush any pending paragraph
+                    if current_paragraph_lines:
+                        para_text = ' '.join(current_paragraph_lines)
+                        if para_text.strip():
+                            current_paragraphs.append(IDMParagraph(text=para_text))
+                        current_paragraph_lines = []
+                    # Add greeting as its own paragraph
+                    current_paragraphs.append(IDMParagraph(text=stripped_line, style="greeting"))
+                    just_started_chapter = False
+                    building_subtitle = False
+                # Check if we're building a subtitle and this could be a continuation
+                elif building_subtitle and len(stripped_line) < 80:
+                    common_starters = ('The ', 'A ', 'An ', 'I ', 'My ', 'It ', 'This ', 'They ', 'As ', 'And ', 'But ', 'So ', 'When ', 'If ', 'Not ')
+                    # Continue building subtitle if it's a parenthetical or short continuation
+                    if (stripped_line.startswith('(') or stripped_line.endswith(')') or 
+                        (len(stripped_line) < 60 and not stripped_line.startswith(common_starters))):
+                        # Append to existing subtitle
+                        current_paragraphs[-1].text += ' ' + stripped_line
+                    else:
+                        # End subtitle building, this is regular content
+                        building_subtitle = False
+                        just_started_chapter = False
+                        current_paragraph_lines.append(stripped_line)
+                # Check if it's a subtitle (first line after chapter, typically descriptive)
+                elif just_started_chapter and len(stripped_line) < 80:
+                    common_starters = ('The ', 'A ', 'An ', 'I ', 'My ', 'It ', 'This ', 'They ', 'As ', 'And ', 'But ', 'So ', 'When ', 'If ', 'Not ')
+                    if not stripped_line.startswith(common_starters):
+                        # Flush any pending paragraph
+                        if current_paragraph_lines:
+                            para_text = ' '.join(current_paragraph_lines)
+                            if para_text.strip():
+                                current_paragraphs.append(IDMParagraph(text=para_text))
+                            current_paragraph_lines = []
+                        # Start building subtitle
+                        current_paragraphs.append(IDMParagraph(text=stripped_line, style="subtitle"))
+                        building_subtitle = True
+                    else:
+                        current_paragraph_lines.append(stripped_line)
+                        just_started_chapter = False
+                        building_subtitle = False
+                else:
+                    current_paragraph_lines.append(stripped_line)
+                    just_started_chapter = False
+                    building_subtitle = False
             else:
-                current_paragraph.append(line)
+                # Empty line - flush paragraph
+                if current_paragraph_lines:
+                    para_text = ' '.join(current_paragraph_lines)
+                    if para_text.strip():
+                        current_paragraphs.append(IDMParagraph(text=para_text))
+                    current_paragraph_lines = []
+        
+        # Flush final paragraph
+        if current_paragraph_lines:
+            para_text = ' '.join(current_paragraph_lines)
+            if para_text.strip():
+                current_paragraphs.append(IDMParagraph(text=para_text))
+        
+        # Add final chapter
+        if current_chapter is not None:
+            current_chapter.blocks = current_paragraphs
+            chapters.append(current_chapter)
+        elif current_paragraphs:
+            # No chapters detected - create single chapter
+            chapters.append(IDMChapter(title="Content", blocks=current_paragraphs))
+        
+        # If still no chapters, create default
+        if not chapters:
+            chapters = [IDMChapter(title="Content", blocks=[])]
 
-        # Add final paragraph
-        if current_paragraph:
-            paragraphs.append(IDMParagraph(text=' '.join(current_paragraph)))
+        # #region agent log
+        chapter_info = []
+        for ch in chapters:
+            blocks = getattr(ch, 'blocks', [])
+            chapter_info.append({"title": ch.title, "title_repr": repr(ch.title), "num_blocks": len(blocks)})
+        _debug_log("converters.py:PDFConverter:convert:result", "PDF conversion complete", {"num_chapters": len(chapters), "chapters": chapter_info, "total_text_len": len(text)}, "H2_empty")
+        # #endregion
 
-        # Create single chapter
-        chapter = IDMChapter(title="PDF Content", blocks=paragraphs)
-
-        return IDMDocument(metadata=metadata, chapters=[chapter])
+        return IDMDocument(metadata=metadata, chapters=chapters)
 
     def convert_with_ai(self, input_path: str, ai_model: str | None = None) -> IDMDocument:
         """Convert PDF file to IDM document using AI structure detection"""

@@ -37,9 +37,9 @@ except ImportError:
         def decorator(func):
             return func
         return decorator
-    stop_after_attempt = None
-    wait_exponential = None
-    retry_if_exception_type = None
+    def stop_after_attempt(n): return None
+    def wait_exponential(**kwargs): return None
+    def retry_if_exception_type(exc): return None
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -172,7 +172,7 @@ class AIStructureDetector:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception_type(openai.APIError) if retry_if_exception_type else None
+        retry=retry_if_exception_type(openai.APIError) if (retry_if_exception_type and openai) else None
     )
     def _call_openai_api(self, prompt: str, chunk_info: Optional[Dict] = None) -> Dict[str, Any]:
         """

@@ -6,7 +6,7 @@
 /* Use system-safe serif fonts only (no external font downloads) */
 
 /* Page setup for KDP - Following KDP Guidelines */
-/* 6x9 trim size - 76 pages needs gutter ≥ 0.375", outside ≥ 0.25" */
+/* 6x9 trim size - 76 pages needs gutter >= 0.375", outside >= 0.25" */
 /* Using larger margins to ensure text stays within bounds */
 @page {
     size: 6in 9in;
@@ -31,7 +31,7 @@
 
 /* Body text - Following KDP Guidelines */
 body {
-    font-family: 'Times New Roman', serif;
+    font-family: 'Times New Roman', 'Times', serif;
     font-size: 10.5pt;
     line-height: 1.45;
     color: #000;
@@ -49,7 +49,7 @@ body {
 
 /* Headings */
 h1, h2, h3 {
-    font-family: 'Times New Roman', serif;
+    font-family: 'Times New Roman', 'Times', serif;
     font-weight: bold;
     color: #000;
     text-align: center;
@@ -79,7 +79,7 @@ h3 {
 
 /* Chapter titles */
 .chapter-title {
-    font-family: 'Georgia', 'Times New Roman', serif;
+    font-family: 'Times New Roman', 'Times', serif;
     font-size: 18pt;
     font-weight: bold;
     letter-spacing: 0.02em;
@@ -105,11 +105,15 @@ p {
 ul.bullet-list {
     margin: 0 0 0.8em 1.2em;
     padding-left: 1em;
-    list-style-type: disc;
+    list-style-type: none;  /* No default bullets - we use hyphens */
 }
 
 ul.bullet-list li {
     margin: 0 0 0.4em 0;
+}
+
+ul.bullet-list li::before {
+    content: "- ";
 }
 
 /* Modern paragraph spacing (optional, not traditional KDP) */
@@ -145,12 +149,12 @@ body.no-indent p {
 
 /* Blockquotes */
 /* page-break-inside: avoid prevents blockquotes from breaking awkwardly across pages */
+/* NOTE: No background-color or transparency - KDP rejects PDFs with transparency */
 blockquote {
     margin: 1em 1.5em;
     padding: 0.5em 1em;
     font-style: italic;
-    border-left: 3px solid #ccc;
-    background-color: #f9f9f9;
+    border-left: 3px solid #000;
     page-break-inside: avoid;  /* Prevent awkward breaks within blockquotes */
 }
 
