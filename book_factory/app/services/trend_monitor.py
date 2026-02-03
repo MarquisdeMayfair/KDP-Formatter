@@ -40,4 +40,12 @@ class TrendMonitor:
 
 
 def topic_based_feeds(topic_name: str) -> list[str]:
-    \"\"\"Generate RSS feeds based on a topic name.\"\"\"\n+    query = quote_plus(topic_name)\n+    tag = slugify(topic_name)\n+\n+    feeds = [\n+        f\"https://www.reddit.com/search.rss?q={query}&sort=hot\",\n+        f\"https://medium.com/feed/tag/{tag}\",\n+    ]\n+    return feeds
+    """Generate RSS feeds based on a topic name."""
+    query = quote_plus(topic_name)
+    tag = slugify(topic_name)
+
+    feeds = [
+        f"https://www.reddit.com/search.rss?q={query}&sort=hot",
+        f"https://medium.com/feed/tag/{tag}",
+    ]
+    return feeds
