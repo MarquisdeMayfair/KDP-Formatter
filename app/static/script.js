@@ -7,13 +7,14 @@ let selectedFile = null;
 let isProcessing = false;
 let sessions = [];
 let isRedirecting = false;
+const BASE_PATH = window.APP_BASE_PATH || '';
 
 /**
  * Check system dependencies status
  */
 async function checkDependencies() {
     try {
-        const response = await fetch('/health');
+        const response = await fetch(`${BASE_PATH}/health`);
         const data = await response.json();
 
         const statusDiv = document.getElementById('status-content');
@@ -227,7 +228,7 @@ async function generateDocument() {
     isRedirecting = false;
 
     try {
-        const response = await fetch('/convert', {
+        const response = await fetch(`${BASE_PATH}/convert`, {
             method: 'POST',
             body: formData
         });

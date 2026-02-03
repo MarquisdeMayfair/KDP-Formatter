@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KDP Formatter - Local Testing</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <script>
+        window.APP_BASE_PATH = "{{ request.scope.get('root_path', '') }}";
+    </script>
 </head>
 <body>
     <header>
@@ -187,6 +190,6 @@
         </details>
     </main>
 
-    <script src="/static/script.js"></script>
+    <script src="{{ url_for('static', path='script.js') }}"></script>
 </body>
 </html>

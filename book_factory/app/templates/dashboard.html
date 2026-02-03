@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewMarylebonePress App</title>
+    <style>
+        body { font-family: "Arial", sans-serif; background: #f5f5f2; color: #1a1a1a; margin: 0; }
+        header { background: #1f2933; color: #fff; padding: 32px; }
+        header h1 { margin: 0 0 8px 0; font-size: 28px; }
+        header p { margin: 0; opacity: 0.8; }
+        .container { padding: 32px; max-width: 1100px; margin: 0 auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .card h2 { margin-top: 0; }
+        .card p { color: #4a4a4a; }
+        .actions a { display: inline-block; margin: 8px 12px 0 0; padding: 10px 14px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 8px; }
+        .actions a.secondary { background: #111827; }
+        .note { margin-top: 24px; background: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #fed7aa; }
+        code { background: #f0f0f0; padding: 2px 6px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>NewMarylebonePress App</h1>
+        <p>Writer + Formatter control surface</p>
+    </header>
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <h2>Writer (Book Factory)</h2>
+                <p>Create topics, collect sources, trigger writing, and run the Phase 2 author voice loop.</p>
+                <div class="actions">
+                    <a href="/docs">API Docs</a>
+                    <a href="/api/v1/topics" class="secondary">List Topics</a>
+                </div>
+            </div>
+            <div class="card">
+                <h2>KDP Formatter</h2>
+                <p>Upload manuscripts and generate KDP-ready PDF/EPUB output.</p>
+                <div class="actions">
+                    <a href="/formatter/">Open Formatter</a>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Trends + Eve</h2>
+                <p>RSS-based trend intake (no captcha). Eve can call the API to commission new books.</p>
+                <div class="actions">
+                    <a href="/api/v1/trends" class="secondary">View Trends</a>
+                </div>
+            </div>
+        </div>
+        <div class="note">
+            <strong>Tip:</strong> Set <code>TREND_RSS_FEEDS</code> in the environment to power trend discovery.
+        </div>
+    </div>
+</body>
+</html>

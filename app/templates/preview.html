@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KDP Formatter - Preview</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <script>
+        window.APP_BASE_PATH = "{{ request.scope.get('root_path', '') }}";
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
@@ -272,7 +275,8 @@
 
         async function loadPDF() {
             try {
-                const loadingTask = pdfjsLib.getDocument(`/download/${sessionId}/pdf`);
+                const basePath = window.APP_BASE_PATH || '';
+                const loadingTask = pdfjsLib.getDocument(`${basePath}/download/${sessionId}/pdf`);
                 pdfDoc = await loadingTask.promise;
                 document.getElementById('total-pages').textContent = pdfDoc.numPages;
                 renderPage(pageNum);
@@ -430,7 +434,8 @@
 
         function downloadFile(type) {
             const link = document.createElement('a');
-            link.href = `/download/${sessionId}/${type}`;
+            const basePath = window.APP_BASE_PATH || '';
+            link.href = `${basePath}/download/${sessionId}/${type}`;
             link.download = ''; // Let the server set the filename
             document.body.appendChild(link);
             link.click();
@@ -463,7 +468,8 @@
         }
 
         function printPDF() {
-            window.open(`/download/${sessionId}/pdf`, '_blank');
+            const basePath = window.APP_BASE_PATH || '';
+            window.open(`${basePath}/download/${sessionId}/pdf`, '_blank');
         }
 
         function shareLink() {

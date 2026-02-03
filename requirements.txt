@@ -13,6 +13,9 @@ pydantic-settings==2.1.0
 # Database
 sqlalchemy==2.0.25
 alembic==1.13.1
+aiosqlite==0.20.0
+feedparser==6.0.11
+edge-tts==6.1.12
 
 # Document processing
 pdfminer.six==20231228     # REQUIRED: PDF text extraction for PDF file uploads
