@@ -46,6 +46,7 @@ class Settings(BaseSettings):
 
     # Trend monitoring (RSS-based, captcha-free)
     trend_rss_feeds: List[str] = Field(default_factory=list)
+    trend_poll_interval_seconds: int = 1800
 
     # Targets
     draft_target_words_default: int = 25000

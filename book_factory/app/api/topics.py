@@ -1,7 +1,6 @@
 """Topic endpoints."""
 from __future__ import annotations
 
-import re
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,17 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app import models, schemas
-from app.services.storage import ensure_topic_structure, SILO_TITLES, silo_paths
+from app.services.storage import ensure_topic_structure, SILO_TITLES, silo_paths, slugify
+from app.services.trend_monitor import topic_based_feeds
 
 router = APIRouter(prefix="/topics", tags=["topics"])
-
-
-def slugify(value: str) -> str:
-    value = value.strip().lower()
-    value = re.sub(r"[^a-z0-9\s-]", "", value)
-    value = re.sub(r"\s+", "-", value)
-    value = re.sub(r"-+", "-", value)
-    return value or "topic"
 
 
 @router.post("", response_model=schemas.TopicDetail, status_code=201)
@@ -82,3 +74,12 @@ async def get_topic(slug: str, db: AsyncSession = Depends(get_db)):
     if not topic:
         raise HTTPException(status_code=404, detail="Topic not found")
     return topic
+
+
+@router.get("/{slug}/suggest-feeds")
+async def suggest_feeds(slug: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Topic).where(models.Topic.slug == slug))
+    topic = result.scalar_one_or_none()
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+    return {"topic": topic.name, "feeds": topic_based_feeds(topic.name)}

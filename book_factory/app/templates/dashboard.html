@@ -5,19 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NewMarylebonePress App</title>
     <style>
-        body { font-family: "Arial", sans-serif; background: #f5f5f2; color: #1a1a1a; margin: 0; }
-        header { background: #1f2933; color: #fff; padding: 32px; }
-        header h1 { margin: 0 0 8px 0; font-size: 28px; }
-        header p { margin: 0; opacity: 0.8; }
-        .container { padding: 32px; max-width: 1100px; margin: 0 auto; }
+        :root {
+            --ink: #0f172a;
+            --slate: #475569;
+            --paper: #f8fafc;
+            --accent: #2563eb;
+            --accent-dark: #1e3a8a;
+            --card: #ffffff;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: "Georgia", serif; background: var(--paper); color: var(--ink); margin: 0; }
+        header { background: linear-gradient(135deg, #111827, #1f2937); color: #fff; padding: 32px; }
+        header h1 { margin: 0 0 8px 0; font-size: 30px; }
+        header p { margin: 0; opacity: 0.8; font-family: "Arial", sans-serif; }
+        .container { padding: 32px; max-width: 1200px; margin: 0 auto; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-        .card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06); }
         .card h2 { margin-top: 0; }
-        .card p { color: #4a4a4a; }
-        .actions a { display: inline-block; margin: 8px 12px 0 0; padding: 10px 14px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 8px; }
-        .actions a.secondary { background: #111827; }
-        .note { margin-top: 24px; background: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #fed7aa; }
-        code { background: #f0f0f0; padding: 2px 6px; border-radius: 6px; }
+        .muted { color: var(--slate); font-family: "Arial", sans-serif; }
+        .actions a, .actions button { display: inline-block; margin: 8px 12px 0 0; padding: 10px 14px; background: var(--accent); color: #fff; text-decoration: none; border-radius: 8px; border: 0; cursor: pointer; font-family: "Arial", sans-serif; }
+        .actions a.secondary, .actions button.secondary { background: #111827; }
+        .note { margin-top: 24px; background: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #fed7aa; font-family: "Arial", sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-family: "Arial", sans-serif; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+        th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--slate); }
+        .status { font-weight: 600; }
+        .status.published { color: #16a34a; }
+        .status.drafting { color: #f97316; }
+        .pill { background: #e2e8f0; padding: 4px 8px; border-radius: 999px; font-size: 12px; }
+        .progress { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+        .progress span { display: block; height: 100%; background: var(--accent); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-row input, textarea, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-family: "Arial", sans-serif; }
+        textarea { min-height: 90px; }
+        .section-title { font-size: 18px; margin: 20px 0 8px; }
     </style>
 </head>
 <body>
@@ -25,11 +47,12 @@
         <h1>NewMarylebonePress App</h1>
         <p>Writer + Formatter control surface</p>
     </header>
+
     <div class="container">
         <div class="grid">
             <div class="card">
-                <h2>Writer (Book Factory)</h2>
-                <p>Create topics, collect sources, trigger writing, and run the Phase 2 author voice loop.</p>
+                <h2>Writer</h2>
+                <p class="muted">Create topics, collect sources, trigger writing, and run the Phase 2 author voice loop.</p>
                 <div class="actions">
                     <a href="/docs">API Docs</a>
                     <a href="/api/v1/topics" class="secondary">List Topics</a>
@@ -37,21 +60,157 @@
             </div>
             <div class="card">
                 <h2>KDP Formatter</h2>
-                <p>Upload manuscripts and generate KDP-ready PDF/EPUB output.</p>
+                <p class="muted">Upload manuscripts and generate KDP-ready PDF/EPUB output.</p>
                 <div class="actions">
                     <a href="/formatter/">Open Formatter</a>
                 </div>
             </div>
             <div class="card">
                 <h2>Trends + Eve</h2>
-                <p>RSS-based trend intake (no captcha). Eve can call the API to commission new books.</p>
+                <p class="muted">RSS-based trend intake (no captcha). Eve can call the API to commission new books.</p>
                 <div class="actions">
                     <a href="/api/v1/trends" class="secondary">View Trends</a>
                 </div>
             </div>
         </div>
+
         <div class="note">
-            <strong>Tip:</strong> Set <code>TREND_RSS_FEEDS</code> in the environment to power trend discovery.
+            <strong>Tip:</strong> Configure <code>TREND_RSS_FEEDS</code> to auto-fill trend candidates.
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Topics</h2>
+            {% if topics %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Topic</th>
+                        <th>Status</th>
+                        <th>Published</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for topic in topics %}
+                    <tr>
+                        <td>{{ topic.name }}</td>
+                        <td class="status {{ topic.status }}">{{ topic.status }}</td>
+                        <td>
+                            {% if topic.published_at %}
+                                <span class="pill">Published</span>
+                            {% else %}
+                                <span class="pill">Not published</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a class="pill" href="/api/v1/topics/{{ topic.slug }}">View JSON</a>
+                            <a class="pill" href="/formatter/">Open Formatter</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="muted">No topics yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Trend Candidates</h2>
+            {% if trends %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Topic</th>
+                        <th>Source</th>
+                        <th>Discovered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trend in trends[:12] %}
+                    <tr>
+                        <td>{{ trend.topic_name }}</td>
+                        <td>{{ trend.source }}</td>
+                        <td>{{ trend.discovered_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="muted">No trend candidates yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Create New Topic</h2>
+            <form method="post" action="/dashboard/topics">
+                <div class="form-row">
+                    <input name="name" placeholder="Topic name" required>
+                    <input name="book_title" placeholder="Book title">
+                </div>
+                <div class="form-row" style="margin-top: 12px;">
+                    <input name="series_name" placeholder="Series name">
+                    <input name="subtitle" placeholder="Subtitle">
+                </div>
+                <div class="form-row" style="margin-top: 12px;">
+                    <input name="author_voice_preset" placeholder="Voice preset" value="default">
+                    <input name="target_audience" placeholder="Target audience">
+                </div>
+                <div class="form-row" style="margin-top: 12px;">
+                    <input name="stance" placeholder="Stance">
+                    <input name="draft_target_words" placeholder="Draft target words" value="25000">
+                </div>
+                <div class="actions">
+                    <button type="submit">Create Topic</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Silos (Latest Topic)</h2>
+            <form method="get" action="/dashboard" class="muted">
+                <label for="topic-select">Select topic:</label>
+                <select id="topic-select" name="topic" onchange="this.form.submit()">
+                    {% for topic in topics %}
+                    <option value="{{ topic.slug }}" {% if selected_topic and topic.slug == selected_topic.slug %}selected{% endif %}>{{ topic.name }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            {% if silos %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Silo</th>
+                        <th>Status</th>
+                        <th>Draft Words</th>
+                        <th>Final Words</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for silo in silos %}
+                    <tr>
+                        <td>{{ silo.silo_number }}. {{ silo.custom_title or silo.name_template }}</td>
+                        <td class="status">{{ silo.status }}</td>
+                        <td>{{ silo.draft_word_count }}</td>
+                        <td>{{ silo.final_word_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="muted">No silos available yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Add URLs to Topic</h2>
+            <p class="muted">Paste one URL per line.</p>
+            <form method="post" action="/dashboard/topics/{{ selected_topic.slug if selected_topic else '' }}/sources">
+                <textarea name="urls" placeholder="https://example.com/article"></textarea>
+                <div class="actions">
+                    <button type="submit">Add URLs</button>
+                </div>
+            </form>
         </div>
     </div>
 </body>

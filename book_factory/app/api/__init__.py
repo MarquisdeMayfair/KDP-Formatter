@@ -1,4 +1,4 @@
 """API routers."""
-from app.api import topics, silos, trends
+from app.api import topics, silos, trends, sources, eve, compile
 
-__all__ = ["topics", "silos", "trends"]
+__all__ = ["topics", "silos", "trends", "sources", "eve", "compile"]

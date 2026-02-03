@@ -27,6 +27,7 @@ class TopicSummary(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    published_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -77,6 +78,24 @@ class ReviewPack(BaseModel):
     source_count: int
 
 
+class SourceCreate(BaseModel):
+    urls: List[str]
+    source: str = "manual"
+
+
+class SourceOut(BaseModel):
+    id: int
+    url: str
+    title: Optional[str] = None
+    domain: Optional[str] = None
+    doc_type: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class AuthorNoteCreate(BaseModel):
     text: str
     source: str = "telegram"
@@ -100,3 +119,18 @@ class WriteResponse(BaseModel):
 class RewriteResponse(BaseModel):
     message: str
     final_path: Optional[str] = None
+
+
+class CompileResponse(BaseModel):
+    message: str
+    manuscript_path: str
+    manifest_path: str
+
+
+class ApplyImagesRequest(BaseModel):
+    replacements: dict[str, str]
+
+
+class ApplyImagesResponse(BaseModel):
+    message: str
+    manuscript_path: str

@@ -36,9 +36,11 @@ class Topic(Base):
     status = Column(String(50), default="created")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    published_at = Column(DateTime)
 
     silos = relationship("Silo", back_populates="topic", cascade="all, delete-orphan")
     author_notes = relationship("AuthorNote", back_populates="topic", cascade="all, delete-orphan")
+    sources = relationship("SourceDoc", back_populates="topic", cascade="all, delete-orphan")
 
 
 class Silo(Base):
@@ -85,3 +87,18 @@ class TrendCandidate(Base):
     trend_score = Column(Float)
     discovered_at = Column(DateTime, default=datetime.utcnow)
     status = Column(String(50), default="new")
+
+
+class SourceDoc(Base):
+    __tablename__ = "source_docs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
+    url = Column(Text, nullable=False)
+    title = Column(String(500))
+    domain = Column(String(255))
+    doc_type = Column(String(50), default="url")
+    status = Column(String(50), default="pending")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    topic = relationship("Topic", back_populates="sources")

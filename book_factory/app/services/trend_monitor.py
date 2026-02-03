@@ -4,6 +4,9 @@ from __future__ import annotations
 from datetime import datetime
 
 import feedparser
+from urllib.parse import quote_plus
+
+from app.services.storage import slugify
 
 from app.config import settings
 from app.models import TrendCandidate
@@ -34,3 +37,7 @@ class TrendMonitor:
                     )
                 )
         return candidates
+
+
+def topic_based_feeds(topic_name: str) -> list[str]:
+    \"\"\"Generate RSS feeds based on a topic name.\"\"\"\n+    query = quote_plus(topic_name)\n+    tag = slugify(topic_name)\n+\n+    feeds = [\n+        f\"https://www.reddit.com/search.rss?q={query}&sort=hot\",\n+        f\"https://medium.com/feed/tag/{tag}\",\n+    ]\n+    return feeds

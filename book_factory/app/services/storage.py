@@ -2,9 +2,18 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from typing import Tuple
 
 from app.config import settings
+
+
+def slugify(value: str) -> str:
+    value = value.strip().lower()
+    value = re.sub(r"[^a-z0-9\\s-]", "", value)
+    value = re.sub(r"\\s+", "-", value)
+    value = re.sub(r"-+", "-", value)
+    return value or "topic"
 
 
 SILO_TITLES = {
