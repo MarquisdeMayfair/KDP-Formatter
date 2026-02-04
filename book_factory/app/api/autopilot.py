@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,6 +67,8 @@ async def start_autopilot(
 
     autopilot_req = schemas.AutopilotRequest(**payload)
     background.add_task(_schedule_autopilot, topic.id, slug, topic.name, autopilot_req)
+    if request.headers.get("content-type", "").startswith("application/x-www-form-urlencoded"):
+        return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
     return schemas.AutopilotResponse(
         message="Autopilot started",
         log_path=f"data/topics/{slug}/metrics/autopilot.jsonl",
@@ -75,6 +78,7 @@ async def start_autopilot(
 @router.post("/stop", response_model=schemas.AutopilotResponse)
 async def stop_autopilot(
     slug: str,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     await _get_topic(db, slug)
@@ -87,6 +91,8 @@ async def stop_autopilot(
         json.dumps({"running": False, "stop_requested": True}),
         encoding="utf-8",
     )
+    if request.headers.get("content-type", "").startswith("application/x-www-form-urlencoded"):
+        return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
     return schemas.AutopilotResponse(
         message="Autopilot stop requested",
         log_path=f"data/topics/{slug}/metrics/autopilot.jsonl",
