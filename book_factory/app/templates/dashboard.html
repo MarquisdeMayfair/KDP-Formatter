@@ -31,9 +31,18 @@
         table { width: 100%; border-collapse: collapse; margin-top: 12px; font-family: "Arial", sans-serif; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
         th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--slate); }
-        .api-table { table-layout: fixed; }
-        .api-table th, .api-table td { font-size: 13px; overflow-wrap: anywhere; }
+        .api-table { width: 100%; }
+        .api-table th, .api-table td { font-size: 13px; }
         .api-table td.method { width: 80px; white-space: nowrap; }
+        .api-table .endpoint { overflow-wrap: anywhere; }
+        .api-table .action { font-weight: 600; }
+        .api-table .endpoint code { font-family: "Arial", sans-serif; }
+        @media (max-width: 980px) {
+            .api-table thead { display: none; }
+            .api-table, .api-table tbody, .api-table tr, .api-table td { display: block; width: 100%; }
+            .api-table tr { border-bottom: 1px solid var(--border); padding: 10px 0; }
+            .api-table td { border: 0; padding: 6px 0; }
+        }
         .status { font-weight: 600; }
         .status.published { color: #16a34a; }
         .status.drafting { color: #f97316; }
@@ -64,11 +73,6 @@
                 <div class="note" style="margin-top: 16px;">
                     <strong>API Quick List</strong>
                     <table class="api-table">
-                        <colgroup>
-                            <col style="width: 38%;">
-                            <col style="width: 18%;">
-                            <col style="width: 44%;">
-                        </colgroup>
                         <thead>
                             <tr>
                                 <th>Action</th>
@@ -77,16 +81,56 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td>List topics</td><td class="method">GET</td><td>/api/v1/topics</td></tr>
-                            <tr><td>Create topic</td><td class="method">POST</td><td>/api/v1/topics</td></tr>
-                            <tr><td>Queue discovery</td><td class="method">POST</td><td>/api/v1/topics/{slug}/discover/queue</td></tr>
-                            <tr><td>Add sources</td><td class="method">POST</td><td>/api/v1/topics/{slug}/sources</td></tr>
-                            <tr><td>Run ingestion</td><td class="method">POST</td><td>/api/v1/topics/{slug}/ingest</td></tr>
-                            <tr><td>Autopilot loop</td><td class="method">POST</td><td>/api/v1/topics/{slug}/autopilot</td></tr>
-                            <tr><td>List sources</td><td class="method">GET</td><td>/api/v1/topics/{slug}/sources</td></tr>
-                            <tr><td>List silos</td><td class="method">GET</td><td>/api/v1/topics/{slug}/silos</td></tr>
-                            <tr><td>Compile book</td><td class="method">POST</td><td>/api/v1/topics/{slug}/compile</td></tr>
-                            <tr><td>Eve commission</td><td class="method">POST</td><td>/api/v1/eve/commission</td></tr>
+                            <tr>
+                                <td class="action">List topics</td>
+                                <td class="method">GET</td>
+                                <td class="endpoint"><code>/api/v1/topics</code></td>
+                            </tr>
+                            <tr>
+                                <td class="action">Create topic</td>
+                                <td class="method">POST</td>
+                                <td class="endpoint"><code>/api/v1/topics</code></td>
+                            </tr>
+                            <tr>
+                                <td class="action">Queue discovery</td>
+                                <td class="method">POST</td>
+                                <td class="endpoint"><code>/api/v1/topics/{slug}/discover/queue</code></td>
+                            </tr>
+                            <tr>
+                                <td class="action">Add sources</td>
+                                <td class="method">POST</td>
+                                <td class="endpoint"><code>/api/v1/topics/{slug}/sources</code></td>
+                            </tr>
+                            <tr>
+                                <td class="action">Run ingestion</td>
+                                <td class="method">POST</td>
+                                <td class="endpoint"><code>/api/v1/topics/{slug}/ingest</code></td>
+                            </tr>
+                            <tr>
+                                <td class="action">Autopilot loop</td>
+                                <td class="method">POST</td>
+                                <td class="endpoint"><code>/api/v1/topics/{slug}/autopilot</code></td>
+                            </tr>
+                            <tr>
+                                <td class="action">List sources</td>
+                                <td class="method">GET</td>
+                                <td class="endpoint"><code>/api/v1/topics/{slug}/sources</code></td>
+                            </tr>
+                            <tr>
+                                <td class="action">List silos</td>
+                                <td class="method">GET</td>
+                                <td class="endpoint"><code>/api/v1/topics/{slug}/silos</code></td>
+                            </tr>
+                            <tr>
+                                <td class="action">Compile book</td>
+                                <td class="method">POST</td>
+                                <td class="endpoint"><code>/api/v1/topics/{slug}/compile</code></td>
+                            </tr>
+                            <tr>
+                                <td class="action">Eve commission</td>
+                                <td class="method">POST</td>
+                                <td class="endpoint"><code>/api/v1/eve/commission</code></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
