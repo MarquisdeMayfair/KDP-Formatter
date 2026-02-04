@@ -31,6 +31,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 12px; font-family: "Arial", sans-serif; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
         th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--slate); }
+        .api-table td { word-break: break-all; font-size: 13px; }
         .status { font-weight: 600; }
         .status.published { color: #16a34a; }
         .status.drafting { color: #f97316; }
@@ -60,7 +61,7 @@
                 </div>
                 <div class="note" style="margin-top: 16px;">
                     <strong>API Quick List</strong>
-                    <table>
+                    <table class="api-table">
                         <thead>
                             <tr>
                                 <th>Action</th>
