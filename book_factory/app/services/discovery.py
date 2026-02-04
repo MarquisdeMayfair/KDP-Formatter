@@ -48,17 +48,18 @@ async def github_search_repos(topic: str, limit: int = 10) -> list[str]:
     return [item.get("html_url") for item in items if item.get("html_url")]
 
 
-def extract_feed_entries(feed_url: str, limit: int = 8) -> list[str]:
+def extract_feed_entries(feed_url: str, limit: int | None = 8) -> list[str]:
     parsed = feedparser.parse(feed_url)
     urls: list[str] = []
-    for entry in parsed.entries[:limit]:
+    entries = parsed.entries if limit in (None, 0) else parsed.entries[:limit]
+    for entry in entries:
         link = getattr(entry, "link", None) or getattr(entry, "id", None)
         if link:
             urls.append(link)
     return urls
 
 
-def collect_discovery_urls(topic_name: str, per_feed: int = 8) -> list[str]:
+def collect_discovery_urls(topic_name: str, per_feed: int | None = 8) -> list[str]:
     feeds: list[str] = [
         reddit_search_feed(topic_name),
         medium_tag_feed(topic_name),

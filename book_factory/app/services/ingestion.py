@@ -14,6 +14,7 @@ from app.services.ollama_client import OllamaClient
 from app.services.x_client import extract_status_id, fetch_tweet_payload, fetch_thread_text, fetch_username
 
 URL_RE = re.compile(r"https?://\\S+")
+X_DOMAINS = ("x.com", "twitter.com")
 from app.services.storage import silo_dir
 
 
@@ -22,8 +23,12 @@ class Chunk:
     text: str
 
 
+def is_x_url(url: str) -> bool:
+    return any(domain in (url or "") for domain in X_DOMAINS)
+
+
 async def fetch_and_clean(url: str, timeout: int = 20) -> str:
-    if "x.com" in url or "twitter.com" in url:
+    if is_x_url(url):
         status_id = extract_status_id(url)
         if not status_id:
             raise ValueError("Invalid X status URL")

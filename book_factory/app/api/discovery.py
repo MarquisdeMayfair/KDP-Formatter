@@ -52,7 +52,16 @@ async def discover_sources(slug: str, db: AsyncSession = Depends(get_db)):
 async def queue_discovered_sources(slug: str, db: AsyncSession = Depends(get_db)):
     topic = await _get_topic(db, slug)
 
-    feed_urls = collect_discovery_urls(topic.name, per_feed=8)
+    pending_result = await db.execute(
+        select(models.SourceDoc).where(
+            models.SourceDoc.topic_id == topic.id,
+            models.SourceDoc.status == "pending",
+        )
+    )
+    pending_count = len(pending_result.scalars().all())
+
+    per_feed = None if pending_count < 50 else 8
+    feed_urls = collect_discovery_urls(topic.name, per_feed=per_feed)
     repos = await github_search_repos(topic.name, limit=8)
     candidates = list(dict.fromkeys(feed_urls + repos))
 
@@ -62,4 +71,5 @@ async def queue_discovered_sources(slug: str, db: AsyncSession = Depends(get_db)
         "topic": topic.name,
         "queued": queued,
         "candidates": len(candidates),
+        "pending_before": pending_count,
     }

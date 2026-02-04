@@ -7,7 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import models
 from app.database import get_db
-from app.services.ingestion import fetch_and_clean, chunk_text, classify_chunk, extract_nuggets, append_to_silo
+from app.services.ingestion import (
+    fetch_and_clean,
+    chunk_text,
+    classify_chunk,
+    extract_nuggets,
+    append_to_silo,
+    is_x_url,
+)
 from app.services.ollama_client import OllamaClient
 from app.services.storage import SILO_TITLES
 
@@ -45,9 +52,10 @@ async def _run_ingest(topic_id: int, slug: str, topic_name: str) -> None:
         sources = result.scalars().all()
 
         max_calls = settings.x_max_calls_per_run
-        for idx, source in enumerate(sources):
-            if idx >= max_calls:
-                break
+        x_calls = 0
+        for source in sources:
+            if is_x_url(source.url) and x_calls >= max_calls:
+                continue
             try:
                 text = await fetch_and_clean(source.url)
                 chunks = chunk_text(text)
@@ -59,6 +67,8 @@ async def _run_ingest(topic_id: int, slug: str, topic_name: str) -> None:
                     append_to_silo(slug, silo_num, nuggets)
 
                 source.status = "extracted"
+                if is_x_url(source.url):
+                    x_calls += 1
             except Exception:
                 source.status = "failed"
 
