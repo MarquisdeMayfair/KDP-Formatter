@@ -26,6 +26,7 @@
         .muted { color: var(--slate); font-family: "Arial", sans-serif; }
         .actions a, .actions button { display: inline-block; margin: 8px 12px 0 0; padding: 10px 14px; background: var(--accent); color: #fff; text-decoration: none; border-radius: 8px; border: 0; cursor: pointer; font-family: "Arial", sans-serif; }
         .actions a.secondary, .actions button.secondary { background: #111827; }
+        .actions form { display: inline-block; margin: 0; }
         .note { margin-top: 24px; background: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #fed7aa; font-family: "Arial", sans-serif; }
         table { width: 100%; border-collapse: collapse; margin-top: 12px; font-family: "Arial", sans-serif; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
@@ -213,6 +214,9 @@
             </form>
             {% if selected_topic %}
             <div class="actions">
+                <form method="post" action="/dashboard/topics/{{ selected_topic.slug }}/discover">
+                    <button type="submit">Auto Add Sources</button>
+                </form>
                 <form method="post" action="/api/v1/topics/{{ selected_topic.slug }}/ingest">
                     <button type="submit" class="secondary">Run Ingestion</button>
                 </form>

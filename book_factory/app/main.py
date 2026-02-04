@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.api import silos, topics, trends, sources, eve, compile, settings as settings_api, ingest, discovery
@@ -15,6 +15,8 @@ from app.services.storage import SILO_TITLES
 from app.services.trend_monitor import TrendMonitor
 from app.services.storage import ensure_topic_structure, silo_paths, slugify
 from app.services.source_inbox import append_sources
+from app.services.discovery import collect_discovery_urls, github_search_repos
+from app.services.source_queue import queue_sources
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -191,6 +193,26 @@ async def dashboard_add_sources(slug: str, urls: str = Form("")):
         await session.commit()
 
     return {"message": "Sources added"}
+
+
+@app.post("/dashboard/topics/{slug}/discover")
+async def dashboard_discover_sources(slug: str):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            return {"error": "Topic not found"}
+
+        feed_urls = collect_discovery_urls(topic.name, per_feed=8)
+        repos = await github_search_repos(topic.name, limit=8)
+        candidates = list(dict.fromkeys(feed_urls + repos))
+        await queue_sources(session, topic.id, topic.slug, candidates, source_label="discovery")
+
+    return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
 
 
 app.include_router(topics.router, prefix="/api/v1")

@@ -13,7 +13,9 @@ from app.services.discovery import (
     medium_tag_feed,
     reddit_search_feed,
     substack_search_feed,
+    collect_discovery_urls,
 )
+from app.services.source_queue import queue_sources
 
 router = APIRouter(prefix="/topics/{slug}/discover", tags=["discover"])
 
@@ -43,4 +45,21 @@ async def discover_sources(slug: str, db: AsyncSession = Depends(get_db)):
         "topic": topic.name,
         "feeds": feeds,
         "github_repos": repos,
+    }
+
+
+@router.post("/queue")
+async def queue_discovered_sources(slug: str, db: AsyncSession = Depends(get_db)):
+    topic = await _get_topic(db, slug)
+
+    feed_urls = collect_discovery_urls(topic.name, per_feed=8)
+    repos = await github_search_repos(topic.name, limit=8)
+    candidates = list(dict.fromkeys(feed_urls + repos))
+
+    queued = await queue_sources(db, topic.id, topic.slug, candidates, source_label="discovery")
+
+    return {
+        "topic": topic.name,
+        "queued": queued,
+        "candidates": len(candidates),
     }
