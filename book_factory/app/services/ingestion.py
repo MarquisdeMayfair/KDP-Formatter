@@ -6,10 +6,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+import asyncio
 import httpx
 from bs4 import BeautifulSoup
 
 from app.services.ollama_client import OllamaClient
+from app.services.x_client import extract_status_id, fetch_tweet_text
 from app.services.storage import silo_dir
 
 
@@ -19,6 +21,13 @@ class Chunk:
 
 
 async def fetch_and_clean(url: str, timeout: int = 20) -> str:
+    if "x.com" in url or "twitter.com" in url:
+        status_id = extract_status_id(url)
+        if not status_id:
+            raise ValueError("Invalid X status URL")
+        text = await asyncio.to_thread(fetch_tweet_text, status_id)
+        return text
+
     async with httpx.AsyncClient(timeout=timeout, headers={"User-Agent": "Mozilla/5.0"}) as client:
         resp = await client.get(url)
         resp.raise_for_status()

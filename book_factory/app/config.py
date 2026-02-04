@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     trend_rss_feeds: List[str] = Field(default_factory=list)
     trend_poll_interval_seconds: int = 1800
 
+    # X API (OAuth 1.0a)
+    x_consumer_key: str = ""
+    x_consumer_secret: str = ""
+    x_access_token: str = ""
+    x_access_token_secret: str = ""
+
     # Targets
     draft_target_words_default: int = 25000
     final_target_words_default: int = 30000
