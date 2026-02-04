@@ -11,7 +11,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from app.services.ollama_client import OllamaClient
-from app.services.x_client import extract_status_id, fetch_tweet_text
+from app.services.x_client import extract_status_id, fetch_tweet_payload
 
 URL_RE = re.compile(r"https?://\\S+")
 from app.services.storage import silo_dir
@@ -27,8 +27,9 @@ async def fetch_and_clean(url: str, timeout: int = 20) -> str:
         status_id = extract_status_id(url)
         if not status_id:
             raise ValueError("Invalid X status URL")
-        text = await asyncio.to_thread(fetch_tweet_text, status_id)
-        urls = URL_RE.findall(text)
+        payload = await asyncio.to_thread(fetch_tweet_payload, status_id)
+        text = payload.get("text", "")
+        urls = payload.get("urls", []) or URL_RE.findall(text)
         if len(text.strip()) < 120 and urls:
             async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
                 try:

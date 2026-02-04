@@ -27,7 +27,7 @@ def _bearer_headers() -> dict:
     return {"Authorization": f"Bearer {settings.x_bearer_token}"}
 
 
-def fetch_tweet_text(status_id: str) -> str:
+def fetch_tweet_payload(status_id: str) -> dict:
     global _last_call_ts
     if _last_call_ts is not None:
         elapsed = time.time() - _last_call_ts
@@ -36,7 +36,7 @@ def fetch_tweet_text(status_id: str) -> str:
             time.sleep(delay)
 
     url = f"https://api.x.com/2/tweets/{status_id}"
-    params = {"tweet.fields": "text,created_at,author_id"}
+    params = {"tweet.fields": "text,created_at,author_id,entities"}
     resp = requests.get(url, headers=_bearer_headers(), params=params, timeout=20)
     if resp.status_code == 429:
         reset = resp.headers.get("x-rate-limit-reset")
@@ -47,4 +47,16 @@ def fetch_tweet_text(status_id: str) -> str:
     resp.raise_for_status()
     _last_call_ts = time.time()
     data = resp.json()
-    return (data.get("data") or {}).get("text", "")
+    payload = data.get("data") or {}
+    text = payload.get("text", "")
+    urls = []
+    entities = payload.get("entities") or {}
+    for item in entities.get("urls", []) or []:
+        expanded = item.get("expanded_url")
+        if expanded:
+            urls.append(expanded)
+    return {"text": text, "urls": urls}
+
+
+def fetch_tweet_text(status_id: str) -> str:
+    return fetch_tweet_payload(status_id).get("text", "")
