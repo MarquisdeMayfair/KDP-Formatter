@@ -6,7 +6,7 @@ import json
 
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,12 +53,19 @@ def _schedule_autopilot(
 @router.post("", response_model=schemas.AutopilotResponse)
 async def start_autopilot(
     slug: str,
-    request: schemas.AutopilotRequest,
+    request: Request,
     background: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
     topic = await _get_topic(db, slug)
-    background.add_task(_schedule_autopilot, topic.id, slug, topic.name, request)
+    if request.headers.get("content-type", "").startswith("application/json"):
+        payload = await request.json()
+    else:
+        form = await request.form()
+        payload = dict(form)
+
+    autopilot_req = schemas.AutopilotRequest(**payload)
+    background.add_task(_schedule_autopilot, topic.id, slug, topic.name, autopilot_req)
     return schemas.AutopilotResponse(
         message="Autopilot started",
         log_path=f"data/topics/{slug}/metrics/autopilot.jsonl",
