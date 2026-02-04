@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from app.api import silos, topics, trends, sources, eve, compile, settings as settings_api, ingest
+from app.api import silos, topics, trends, sources, eve, compile, settings as settings_api, ingest, discovery
 from app.config import settings
 from app.database import init_db
 from app.services.metrics import word_count
@@ -201,3 +201,4 @@ app.include_router(eve.router, prefix="/api/v1")
 app.include_router(compile.router, prefix="/api/v1")
 app.include_router(settings_api.router, prefix="/api/v1")
 app.include_router(ingest.router, prefix="/api/v1")
+app.include_router(discovery.router, prefix="/api/v1")

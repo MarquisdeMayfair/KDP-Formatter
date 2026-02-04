@@ -57,6 +57,12 @@ class Settings(BaseSettings):
     x_max_calls_per_run: int = 50
     x_bearer_token: str = ""
 
+    # GitHub
+    github_token: str = ""
+
+    # RSSHub (optional for Substack discovery)
+    rsshub_base_url: str = ""
+
     # Targets
     draft_target_words_default: int = 25000
     final_target_words_default: int = 30000
