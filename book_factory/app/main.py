@@ -22,7 +22,24 @@ from app.services.source_queue import queue_sources
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title=settings.app_name, docs_url=None, redoc_url=None)
+API_QUICK_LIST = """\
+## API Quick List
+
+| Action | Method | Endpoint |
+| --- | --- | --- |
+| List topics | GET | `/api/v1/topics` |
+| Create topic | POST | `/api/v1/topics` |
+| Queue discovery | POST | `/api/v1/topics/{slug}/discover/queue` |
+| Add sources | POST | `/api/v1/topics/{slug}/sources` |
+| Run ingestion | POST | `/api/v1/topics/{slug}/ingest` |
+| Autopilot loop | POST | `/api/v1/topics/{slug}/autopilot` |
+| List sources | GET | `/api/v1/topics/{slug}/sources` |
+| List silos | GET | `/api/v1/topics/{slug}/silos` |
+| Compile book | POST | `/api/v1/topics/{slug}/compile` |
+| Eve commission | POST | `/api/v1/eve/commission` |
+"""
+
+app = FastAPI(title=settings.app_name, description=API_QUICK_LIST)
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 
