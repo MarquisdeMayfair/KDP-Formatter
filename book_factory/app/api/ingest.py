@@ -31,6 +31,7 @@ async def ingest_topic(slug: str, background: BackgroundTasks, db: AsyncSession 
 
 async def _run_ingest(topic_id: int, slug: str, topic_name: str) -> None:
     from app.database import AsyncSessionLocal
+    from app.config import settings
 
     ollama = OllamaClient()
 
@@ -43,7 +44,10 @@ async def _run_ingest(topic_id: int, slug: str, topic_name: str) -> None:
         )
         sources = result.scalars().all()
 
-        for source in sources:
+        max_calls = settings.x_max_calls_per_run
+        for idx, source in enumerate(sources):
+            if idx >= max_calls:
+                break
             try:
                 text = await fetch_and_clean(source.url)
                 chunks = chunk_text(text)
