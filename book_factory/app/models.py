@@ -33,6 +33,9 @@ class Topic(Base):
     taboo_list = Column(JSON, default=list)
     draft_target_words = Column(Integer, default=25000)
     final_target_words = Column(Integer, default=30000)
+    rrp_usd = Column(Float, default=9.99)
+    expected_units = Column(Integer, default=500)
+    max_cost_usd = Column(Float, default=15.0)
     status = Column(String(50), default="created")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -41,6 +44,21 @@ class Topic(Base):
     silos = relationship("Silo", back_populates="topic", cascade="all, delete-orphan")
     author_notes = relationship("AuthorNote", back_populates="topic", cascade="all, delete-orphan")
     sources = relationship("SourceDoc", back_populates="topic", cascade="all, delete-orphan")
+    silo_settings = relationship("SiloSetting", back_populates="topic", cascade="all, delete-orphan")
+
+
+class SiloSetting(Base):
+    __tablename__ = "silo_settings"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
+    silo_number = Column(Integer, nullable=False)
+    target_words = Column(Integer, default=2000)
+    min_sources = Column(Integer, default=5)
+    min_nuggets = Column(Integer, default=12)
+    template_json = Column(JSON, default=dict)
+
+    topic = relationship("Topic", back_populates="silo_settings")
 
 
 class Silo(Base):

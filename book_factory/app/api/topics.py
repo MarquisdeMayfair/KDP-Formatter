@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app import models, schemas
 from app.services.storage import ensure_topic_structure, SILO_TITLES, silo_paths, slugify
+from app.services.templates import DEFAULT_SILO_TEMPLATES
 from app.services.trend_monitor import topic_based_feeds
 
 router = APIRouter(prefix="/topics", tags=["topics"])
@@ -37,6 +38,9 @@ async def create_topic(
         taboo_list=payload.taboo_list,
         draft_target_words=payload.draft_target_words,
         final_target_words=payload.final_target_words,
+        rrp_usd=payload.rrp_usd,
+        expected_units=payload.expected_units,
+        max_cost_usd=payload.max_cost_usd,
         status="research",
     )
     db.add(topic)
@@ -55,6 +59,18 @@ async def create_topic(
             status="drafting" if silo_number == 0 else "empty",
         )
         db.add(silo)
+
+        template = DEFAULT_SILO_TEMPLATES.get(silo_number, {})
+        db.add(
+            models.SiloSetting(
+                topic_id=topic.id,
+                silo_number=silo_number,
+                target_words=2000,
+                min_sources=5,
+                min_nuggets=12,
+                template_json=template,
+            )
+        )
 
     await db.commit()
     await db.refresh(topic)

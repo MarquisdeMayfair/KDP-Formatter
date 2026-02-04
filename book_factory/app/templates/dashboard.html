@@ -211,6 +211,13 @@
                     <button type="submit">Add URLs</button>
                 </div>
             </form>
+            {% if selected_topic %}
+            <div class="actions">
+                <form method="post" action="/api/v1/topics/{{ selected_topic.slug }}/ingest">
+                    <button type="submit" class="secondary">Run Ingestion</button>
+                </form>
+            </div>
+            {% endif %}
         </div>
     </div>
 </body>

@@ -28,6 +28,7 @@ uvicorn app.main:app --reload --port 8002
 - `POST /api/v1/topics/{slug}/silos/{n}/rewrite` rewrite with notes
 - `POST /api/v1/topics/{slug}/compile` compile manuscript + image manifest
 - `POST /api/v1/topics/{slug}/apply-images` replace placeholders with images
+- `POST /api/v1/topics/{slug}/ingest` run auto ingestion pipeline
 - `POST /api/v1/trends/refresh` fetch RSS trend candidates
 - `GET /api/v1/trends` list candidates
 

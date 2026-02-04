@@ -18,6 +18,9 @@ class TopicCreate(BaseModel):
     taboo_list: List[str] = Field(default_factory=list)
     draft_target_words: int = 25000
     final_target_words: int = 30000
+    rrp_usd: float = 9.99
+    expected_units: int = 500
+    max_cost_usd: float = 15.0
 
 
 class TopicSummary(BaseModel):
@@ -43,6 +46,9 @@ class TopicDetail(TopicSummary):
     taboo_list: List[str]
     draft_target_words: int
     final_target_words: int
+    rrp_usd: float
+    expected_units: int
+    max_cost_usd: float
 
 
 class SiloSummary(BaseModel):
@@ -134,3 +140,22 @@ class ApplyImagesRequest(BaseModel):
 class ApplyImagesResponse(BaseModel):
     message: str
     manuscript_path: str
+
+
+class SiloSettingOut(BaseModel):
+    id: int
+    silo_number: int
+    target_words: int
+    min_sources: int
+    min_nuggets: int
+    template_json: dict
+
+    class Config:
+        from_attributes = True
+
+
+class SiloSettingUpdate(BaseModel):
+    target_words: int | None = None
+    min_sources: int | None = None
+    min_nuggets: int | None = None
+    template_json: dict | None = None
