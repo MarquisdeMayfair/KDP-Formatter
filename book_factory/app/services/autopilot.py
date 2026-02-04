@@ -47,8 +47,18 @@ async def run_autopilot(
     log_dir = topic_dir(slug) / "metrics"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "autopilot.jsonl"
+    status_path = log_dir / "autopilot_status.json"
+    stop_path = log_dir / "autopilot_stop"
+
+    status_path.write_text(
+        json.dumps({"running": True, "started_at": datetime.utcnow().isoformat()}),
+        encoding="utf-8",
+    )
 
     for cycle in range(1, max_cycles + 1):
+        if stop_path.exists():
+            break
+
         start = time.monotonic()
         async with AsyncSessionLocal() as session:
             pending_before = await _pending_count(session, topic_id)
@@ -79,6 +89,18 @@ async def run_autopilot(
         with open(log_path, "a", encoding="utf-8") as handle:
             handle.write(json.dumps(record) + "\n")
 
+        status_path.write_text(
+            json.dumps(
+                {
+                    "running": True,
+                    "last_cycle": cycle,
+                    "last_update": datetime.utcnow().isoformat(),
+                    "draft_words": draft_words,
+                }
+            ),
+            encoding="utf-8",
+        )
+
         if stop_wordcount and draft_words >= stop_wordcount:
             break
         if stop_on_no_new and queued == 0 and ingest_stats["processed"] == 0:
@@ -86,4 +108,10 @@ async def run_autopilot(
 
         time.sleep(cooldown_seconds)
 
+    status_path.write_text(
+        json.dumps({"running": False, "stopped_at": datetime.utcnow().isoformat()}),
+        encoding="utf-8",
+    )
+    if stop_path.exists():
+        stop_path.unlink()
     return str(log_path)

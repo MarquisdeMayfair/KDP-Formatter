@@ -228,6 +228,60 @@
         </div>
 
         <div class="card" style="margin-top: 24px;">
+            <h2>Autopilot</h2>
+            {% if selected_topic %}
+            <p class="muted">Continuous discovery + ingest. Stop any time during review.</p>
+            <div class="actions">
+                <form method="post" action="/api/v1/topics/{{ selected_topic.slug }}/autopilot">
+                    <input type="hidden" name="max_cycles" value="6">
+                    <input type="hidden" name="cooldown_seconds" value="30">
+                    <input type="hidden" name="stop_wordcount" value="{{ selected_topic.draft_target_words }}">
+                    <input type="hidden" name="stop_on_no_new" value="true">
+                    <button type="submit">Start Autopilot</button>
+                </form>
+                <form method="post" action="/api/v1/topics/{{ selected_topic.slug }}/autopilot/stop">
+                    <button type="submit" class="secondary">Stop Autopilot</button>
+                </form>
+            </div>
+            <div class="note" style="margin-top: 16px;">
+                <strong>Status:</strong>
+                {% if autopilot_status and autopilot_status.get("running") %}
+                    <span class="pill">Running</span>
+                {% else %}
+                    <span class="pill">Stopped</span>
+                {% endif %}
+                {% if autopilot_status.get("last_update") %}
+                    <span class="muted">Last update: {{ autopilot_status.get("last_update") }}</span>
+                {% endif %}
+            </div>
+            {% if autopilot_last %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cycle</th>
+                        <th>Queued</th>
+                        <th>Processed</th>
+                        <th>Draft Words</th>
+                        <th>Duration (s)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ autopilot_last.cycle }}</td>
+                        <td>{{ autopilot_last.queued }}</td>
+                        <td>{{ autopilot_last.ingest.processed }}</td>
+                        <td>{{ autopilot_last.draft_words }}</td>
+                        <td>{{ autopilot_last.duration_seconds }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% endif %}
+            {% else %}
+            <p class="muted">Select a topic to run autopilot.</p>
+            {% endif %}
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
             <h2>Add URLs to Topic</h2>
             <p class="muted">Paste one URL per line.</p>
             <form method="post" action="/dashboard/topics/{{ selected_topic.slug if selected_topic else '' }}/sources">

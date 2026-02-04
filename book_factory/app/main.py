@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import json
 from pathlib import Path
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -103,6 +104,33 @@ async def dashboard_view(request: Request, topic: str | None = None):
         trends_result = await session.execute(select(models.TrendCandidate).order_by(models.TrendCandidate.discovered_at.desc()))
         trends_list = trends_result.scalars().all()
 
+        autopilot_status = {}
+        autopilot_last = None
+        if selected_topic:
+            metrics_dir = Path(settings.storage_path) / selected_topic.slug / "metrics"
+            status_path = metrics_dir / "autopilot_status.json"
+            log_path = metrics_dir / "autopilot.jsonl"
+
+            if status_path.exists():
+                try:
+                    autopilot_status = json.loads(status_path.read_text(encoding="utf-8"))
+                except json.JSONDecodeError:
+                    autopilot_status = {}
+
+            if log_path.exists():
+                try:
+                    with open(log_path, "rb") as handle:
+                        try:
+                            handle.seek(-2048, 2)
+                        except OSError:
+                            handle.seek(0)
+                        chunk = handle.read().decode("utf-8", errors="ignore")
+                        lines = [line for line in chunk.splitlines() if line.strip()]
+                        if lines:
+                            autopilot_last = json.loads(lines[-1])
+                except (OSError, json.JSONDecodeError):
+                    autopilot_last = None
+
     context = {
         "request": request,
         "topics": topics_list,
@@ -110,6 +138,8 @@ async def dashboard_view(request: Request, topic: str | None = None):
         "silos": silos,
         "silo_titles": SILO_TITLES,
         "trends": trends_list,
+        "autopilot_status": autopilot_status,
+        "autopilot_last": autopilot_last,
     }
     return templates.TemplateResponse("dashboard.html", context)
 
