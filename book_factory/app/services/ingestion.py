@@ -12,6 +12,8 @@ from bs4 import BeautifulSoup
 
 from app.services.ollama_client import OllamaClient
 from app.services.x_client import extract_status_id, fetch_tweet_text
+
+URL_RE = re.compile(r"https?://\\S+")
 from app.services.storage import silo_dir
 
 
@@ -26,12 +28,26 @@ async def fetch_and_clean(url: str, timeout: int = 20) -> str:
         if not status_id:
             raise ValueError("Invalid X status URL")
         text = await asyncio.to_thread(fetch_tweet_text, status_id)
+        urls = URL_RE.findall(text)
+        if len(text.strip()) < 120 and urls:
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+                try:
+                    resp = await client.get(urls[0])
+                    resp.raise_for_status()
+                    html = resp.text
+                    return _clean_html(html)
+                except Exception:
+                    return text
         return text
 
     async with httpx.AsyncClient(timeout=timeout, headers={"User-Agent": "Mozilla/5.0"}) as client:
         resp = await client.get(url)
         resp.raise_for_status()
         html = resp.text
+    return _clean_html(html)
+
+
+def _clean_html(html: str) -> str:
     soup = BeautifulSoup(html, "lxml")
     for tag in soup(["script", "style", "noscript"]):
         tag.decompose()
