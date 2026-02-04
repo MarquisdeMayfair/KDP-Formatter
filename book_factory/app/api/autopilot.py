@@ -78,9 +78,15 @@ async def stop_autopilot(
     db: AsyncSession = Depends(get_db),
 ):
     await _get_topic(db, slug)
-    stop_path = topic_dir(slug) / "metrics" / "autopilot_stop"
-    stop_path.parent.mkdir(parents=True, exist_ok=True)
+    metrics_dir = topic_dir(slug) / "metrics"
+    metrics_dir.mkdir(parents=True, exist_ok=True)
+    stop_path = metrics_dir / "autopilot_stop"
     stop_path.write_text("stop", encoding="utf-8")
+    status_path = metrics_dir / "autopilot_status.json"
+    status_path.write_text(
+        json.dumps({"running": False, "stop_requested": True}),
+        encoding="utf-8",
+    )
     return schemas.AutopilotResponse(
         message="Autopilot stop requested",
         log_path=f"data/topics/{slug}/metrics/autopilot.jsonl",

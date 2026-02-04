@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import time
+import asyncio
 from datetime import datetime
 from pathlib import Path
 
@@ -106,7 +107,14 @@ async def run_autopilot(
         if stop_on_no_new and queued == 0 and ingest_stats["processed"] == 0:
             break
 
-        time.sleep(cooldown_seconds)
+        # Allow responsive stop during cooldown.
+        remaining = cooldown_seconds
+        while remaining > 0:
+            if stop_path.exists():
+                break
+            step = 2 if remaining >= 2 else remaining
+            await asyncio.sleep(step)
+            remaining -= step
 
     status_path.write_text(
         json.dumps({"running": False, "stopped_at": datetime.utcnow().isoformat()}),
