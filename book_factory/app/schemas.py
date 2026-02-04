@@ -89,6 +89,11 @@ class SourceCreate(BaseModel):
     source: str = "manual"
 
 
+class SourceTextCreate(BaseModel):
+    text: str
+    source: str = "manual"
+
+
 class SourceOut(BaseModel):
     id: int
     url: str

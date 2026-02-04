@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import models, schemas
 from app.database import get_db
-from app.services.source_inbox import append_sources
+from app.services.source_inbox import append_sources, append_text
 
 router = APIRouter(prefix="/topics/{slug}/sources", tags=["sources"])
 
@@ -66,3 +66,27 @@ async def add_sources(
         await db.refresh(doc)
 
     return created
+
+
+@router.post("/text", response_model=schemas.SourceOut)
+async def add_source_text(
+    slug: str,
+    payload: schemas.SourceTextCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    topic = await _get_topic(db, slug)
+    if not payload.text.strip():
+        raise HTTPException(status_code=400, detail="Text is empty")
+
+    path = append_text(slug, payload.text, source=payload.source)
+    doc = models.SourceDoc(
+        topic_id=topic.id,
+        url=f"file:{path}",
+        domain="local",
+        doc_type="text",
+        status="pending",
+    )
+    db.add(doc)
+    await db.commit()
+    await db.refresh(doc)
+    return doc

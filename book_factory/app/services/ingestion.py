@@ -28,6 +28,9 @@ def is_x_url(url: str) -> bool:
 
 
 async def fetch_and_clean(url: str, timeout: int = 20) -> str:
+    if url.startswith("file:"):
+        path = url.replace("file:", "", 1)
+        return Path(path).read_text(encoding="utf-8", errors="ignore").strip()
     if is_x_url(url):
         status_id = extract_status_id(url)
         if not status_id:

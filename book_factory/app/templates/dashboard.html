@@ -289,6 +289,17 @@
             </div>
             {% endif %}
         </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Add Text to Topic</h2>
+            <p class="muted">Paste copied text or notes. This is saved into the inbox for sorting.</p>
+            <form method="post" action="/dashboard/topics/{{ selected_topic.slug if selected_topic else '' }}/sources/text">
+                <textarea name="text" placeholder="Paste text here..."></textarea>
+                <div class="actions">
+                    <button type="submit">Add Text</button>
+                </div>
+            </form>
+        </div>
     </div>
 </body>
 </html>

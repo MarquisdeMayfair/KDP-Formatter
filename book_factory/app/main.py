@@ -15,7 +15,7 @@ from app.services.metrics import word_count
 from app.services.storage import SILO_TITLES
 from app.services.trend_monitor import TrendMonitor
 from app.services.storage import ensure_topic_structure, silo_paths, slugify
-from app.services.source_inbox import append_sources
+from app.services.source_inbox import append_sources, append_text
 from app.services.discovery import collect_discovery_urls, github_search_repos
 from app.services.source_queue import queue_sources
 
@@ -245,6 +245,36 @@ async def dashboard_add_sources(slug: str, urls: str = Form("")):
         await session.commit()
 
     return {"message": "Sources added"}
+
+
+@app.post("/dashboard/topics/{slug}/sources/text")
+async def dashboard_add_source_text(slug: str, text: str = Form("")):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    if not text.strip():
+        return {"error": "No text provided"}
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            return {"error": "Topic not found"}
+
+        path = append_text(slug, text, source="dashboard")
+        session.add(
+            models.SourceDoc(
+                topic_id=topic.id,
+                url=f"file:{path}",
+                domain="local",
+                doc_type="text",
+                status="pending",
+            )
+        )
+        await session.commit()
+
+    return {"message": "Text added"}
 
 
 @app.post("/dashboard/topics/{slug}/discover")
