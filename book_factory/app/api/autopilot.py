@@ -59,6 +59,10 @@ async def start_autopilot(
     db: AsyncSession = Depends(get_db),
 ):
     topic = await _get_topic(db, slug)
+    metrics_dir = topic_dir(slug) / "metrics"
+    stop_path = metrics_dir / "autopilot_stop"
+    if stop_path.exists():
+        stop_path.unlink()
     if request.headers.get("content-type", "").startswith("application/json"):
         payload = await request.json()
     else:
