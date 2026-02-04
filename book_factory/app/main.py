@@ -22,7 +22,7 @@ from app.services.source_queue import queue_sources
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title=settings.app_name)
+app = FastAPI(title=settings.app_name, docs_url=None, redoc_url=None)
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 
@@ -65,6 +65,11 @@ async def _trend_loop() -> None:
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/docs", response_class=HTMLResponse)
+async def api_docs(request: Request):
+    return templates.TemplateResponse("api_docs.html", {"request": request})
 
 
 @app.get("/", response_class=HTMLResponse)
