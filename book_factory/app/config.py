@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     x_access_token_secret: str = ""
     x_min_seconds_between_calls: float = 2.0
     x_max_calls_per_run: int = 50
+    x_bearer_token: str = ""
 
     # Targets
     draft_target_words_default: int = 25000
