@@ -58,6 +58,29 @@
                     <a href="/docs">API Docs</a>
                     <a href="/api/v1/topics" class="secondary">List Topics</a>
                 </div>
+                <div class="note" style="margin-top: 16px;">
+                    <strong>API Quick List</strong>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>Method</th>
+                                <th>Endpoint</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>List topics</td><td>GET</td><td>/api/v1/topics</td></tr>
+                            <tr><td>Create topic</td><td>POST</td><td>/api/v1/topics</td></tr>
+                            <tr><td>Queue discovery</td><td>POST</td><td>/api/v1/topics/{slug}/discover/queue</td></tr>
+                            <tr><td>Add sources</td><td>POST</td><td>/api/v1/topics/{slug}/sources</td></tr>
+                            <tr><td>Run ingestion</td><td>POST</td><td>/api/v1/topics/{slug}/ingest</td></tr>
+                            <tr><td>List sources</td><td>GET</td><td>/api/v1/topics/{slug}/sources</td></tr>
+                            <tr><td>List silos</td><td>GET</td><td>/api/v1/topics/{slug}/silos</td></tr>
+                            <tr><td>Compile book</td><td>POST</td><td>/api/v1/topics/{slug}/compile</td></tr>
+                            <tr><td>Eve commission</td><td>POST</td><td>/api/v1/eve/commission</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="card">
                 <h2>KDP Formatter</h2>
