@@ -159,3 +159,15 @@ class SiloSettingUpdate(BaseModel):
     min_sources: int | None = None
     min_nuggets: int | None = None
     template_json: dict | None = None
+
+
+class AutopilotRequest(BaseModel):
+    max_cycles: int = 6
+    cooldown_seconds: int = 30
+    stop_wordcount: int | None = None
+    stop_on_no_new: bool = True
+
+
+class AutopilotResponse(BaseModel):
+    message: str
+    log_path: str
