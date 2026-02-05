@@ -16,6 +16,7 @@ from app.services.ingestion import (
     is_x_url,
     chunk_text,
 )
+from app.services.ingest_log import log_failure, log_success
 from app.services.ollama_client import OllamaClient
 from app.services.storage import SILO_TITLES
 
@@ -45,7 +46,10 @@ async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
                 continue
             processed += 1
             try:
+                started = time.monotonic()
                 text = await fetch_and_clean(source.url)
+                if len(text.split()) < settings.ingest_min_words:
+                    raise ValueError("too_short")
                 chunks = chunk_text(text)
 
                 for chunk in chunks:
@@ -58,9 +62,14 @@ async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
                 extracted += 1
                 if is_x_url(source.url):
                     x_calls += 1
-            except Exception:
+                log_success(slug, source.url, len(text.split()), time.monotonic() - started)
+            except Exception as exc:
                 source.status = "failed"
                 failed += 1
+                reason = "failed"
+                if isinstance(exc, ValueError):
+                    reason = str(exc) or "failed"
+                log_failure(slug, source.url, reason)
 
             await session.commit()
 

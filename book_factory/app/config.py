@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     draft_target_words_default: int = 25000
     final_target_words_default: int = 30000
 
+    # Ingestion quality gate
+    ingest_min_words: int = 300
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

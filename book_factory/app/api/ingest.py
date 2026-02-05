@@ -29,6 +29,20 @@ async def ingest_topic(slug: str, background: BackgroundTasks, db: AsyncSession 
     return {"message": "Ingestion started"}
 
 
+@router.get("/ingest/failures")
+async def ingest_failures(slug: str, db: AsyncSession = Depends(get_db)):
+    await _get_topic(db, slug)
+    from app.services.storage import topic_dir
+    import json
+
+    path = topic_dir(slug) / "metrics" / "ingest_failures.jsonl"
+    if not path.exists():
+        return {"failures": []}
+    lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    records = [json.loads(line) for line in lines if line.strip()]
+    return {"failures": records[-50:]}
+
+
 def _schedule_ingest(topic_id: int, slug: str, topic_name: str) -> None:
     try:
         loop = asyncio.get_running_loop()

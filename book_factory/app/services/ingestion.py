@@ -60,7 +60,7 @@ async def fetch_and_clean(url: str, timeout: int = 20) -> str:
         html = resp.text
     cleaned = _clean_html(html)
     if _looks_blocked(cleaned):
-        raise ValueError("Blocked or captcha page")
+        raise ValueError("blocked")
     return cleaned
 
 
@@ -71,6 +71,22 @@ def _clean_html(html: str) -> str:
     text = "\n".join(line.strip() for line in soup.get_text("\n").splitlines())
     text = re.sub(r"\n{2,}", "\n\n", text)
     return text.strip()
+
+
+def _looks_blocked(text: str) -> bool:
+    markers = [
+        "403 forbidden",
+        "access denied",
+        "request blocked",
+        "enable javascript",
+        "captcha",
+        "cloudflare",
+        "robot check",
+        "not authorized",
+        "temporarily unavailable",
+    ]
+    sample = text.lower()[:2000]
+    return any(marker in sample for marker in markers)
 
 
 def _looks_blocked(text: str) -> bool:
