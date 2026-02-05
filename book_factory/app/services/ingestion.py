@@ -15,6 +15,11 @@ from app.services.x_client import extract_status_id, fetch_tweet_payload, fetch_
 
 URL_RE = re.compile(r"https?://\\S+")
 X_DOMAINS = ("x.com", "twitter.com")
+READER_DOMAINS = (
+    "medium.com",
+    "substack.com",
+    "blog.devgenius.io",
+)
 from app.services.storage import silo_dir
 
 
@@ -51,7 +56,11 @@ async def fetch_and_clean(url: str, timeout: int = 20) -> str:
 
     headers = {"User-Agent": "Mozilla/5.0"}
     async with httpx.AsyncClient(timeout=timeout, headers=headers) as client:
-        resp = await client.get(url)
+        if any(domain in url for domain in READER_DOMAINS):
+            reader_url = f"https://r.jina.ai/http://{url}"
+            resp = await client.get(reader_url)
+        else:
+            resp = await client.get(url)
         if resp.status_code in {403, 429, 451}:
             # Fallback to Jina reader to bypass common bot blocks.
             reader_url = f"https://r.jina.ai/http://{url}"
