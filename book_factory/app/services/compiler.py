@@ -32,6 +32,26 @@ def compile_manuscript(slug: str, source_paths: Iterable[Path]) -> Path:
     return manuscript_path
 
 
+def build_sources_page(slug: str, urls: Iterable[str]) -> Path:
+    book_dir = topic_dir(slug) / "book"
+    book_dir.mkdir(parents=True, exist_ok=True)
+    sources_path = topic_dir(slug) / "sources.md"
+
+    unique = []
+    seen = set()
+    for url in urls:
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        unique.append(url)
+
+    lines = ["# Sources", ""]
+    for url in unique:
+        lines.append(f"- {url}")
+    sources_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return sources_path
+
+
 def build_image_manifest(slug: str, manuscript_path: Path) -> Path:
     book_dir = topic_dir(slug) / "book"
     text = _read_text(manuscript_path)

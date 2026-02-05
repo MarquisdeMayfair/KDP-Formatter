@@ -55,7 +55,7 @@ async def fetch_and_clean(url: str, timeout: int = 20) -> str:
         return text
 
     headers = {"User-Agent": "Mozilla/5.0"}
-    async with httpx.AsyncClient(timeout=timeout, headers=headers) as client:
+    async with httpx.AsyncClient(timeout=timeout, headers=headers, follow_redirects=True) as client:
         if any(domain in url for domain in READER_DOMAINS):
             reader_url = f"https://r.jina.ai/http://{url}"
             resp = await client.get(reader_url)

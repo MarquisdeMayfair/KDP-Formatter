@@ -62,6 +62,19 @@ class Settings(BaseSettings):
 
     # Google CSE
     google_cse_api_key: str | None = None
+    google_cse_cx: str = "3767d9260c5464710"
+    google_cse_date_restrict: str = "d30"
+    google_cse_results_per_query: int = 3
+    cse_primary_domains: List[str] = Field(
+        default_factory=lambda: [
+            "substack.com",
+            "medium.com",
+            "theverge.com",
+            "wired.com",
+            "techcrunch.com",
+            "techradar.com",
+        ]
+    )
 
     # RSSHub (optional for Substack discovery)
     rsshub_base_url: str = ""
@@ -80,6 +93,14 @@ class Settings(BaseSettings):
     @field_validator("trend_rss_feeds", mode="before")
     @classmethod
     def _split_feeds(cls, value):
+        if isinstance(value, str):
+            items = [item.strip() for item in value.split(",") if item.strip()]
+            return items
+        return value
+
+    @field_validator("cse_primary_domains", mode="before")
+    @classmethod
+    def _split_domains(cls, value):
         if isinstance(value, str):
             items = [item.strip() for item in value.split(",") if item.strip()]
             return items

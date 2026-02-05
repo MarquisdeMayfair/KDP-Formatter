@@ -21,7 +21,7 @@ async def queue_sources(
     session: AsyncSession,
     topic_id: int,
     slug: str,
-    urls: list[str],
+    urls: list[str] | list[tuple[str, str]],
     source_label: str = "discovery",
 ) -> int:
     if not urls:
@@ -32,19 +32,28 @@ async def queue_sources(
     )
     existing = {row[0] for row in result.all() if row[0]}
 
-    new_urls = [url for url in urls if url not in existing]
+    new_urls: list[tuple[str, str]] = []
+    for item in urls:
+        if isinstance(item, tuple):
+            url, label = item
+        else:
+            url, label = item, source_label
+        if url in existing:
+            continue
+        new_urls.append((url, label))
     if not new_urls:
         return 0
 
     append_sources(slug, new_urls, source=source_label)
 
-    for url in new_urls:
+    for url, label in new_urls:
         session.add(
             models.SourceDoc(
                 topic_id=topic_id,
                 url=url,
                 domain=_domain(url),
                 status="pending",
+                source=label,
             )
         )
 

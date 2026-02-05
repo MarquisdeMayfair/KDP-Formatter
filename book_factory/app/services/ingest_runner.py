@@ -52,8 +52,19 @@ async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
                     raise ValueError("too_short")
                 chunks = chunk_text(text)
 
+                # Route directly if source labeled for a silo, else classify.
+                forced_silo = None
+                if source.source and source.source.startswith("cse:silo_"):
+                    try:
+                        forced_silo = int(source.source.split("cse:silo_")[1])
+                    except ValueError:
+                        forced_silo = None
+
                 for chunk in chunks:
-                    silo_num = await classify_chunk(ollama, chunk.text, topic_name)
+                    if forced_silo is not None:
+                        silo_num = forced_silo
+                    else:
+                        silo_num = await classify_chunk(ollama, chunk.text, topic_name)
                     silo_title = SILO_TITLES.get(silo_num, "Unclassified")
                     nuggets = await extract_nuggets(ollama, chunk.text, topic_name, silo_title)
                     append_to_silo(slug, silo_num, nuggets)

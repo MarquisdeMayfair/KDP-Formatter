@@ -47,6 +47,16 @@ def ensure_topic_structure(slug: str) -> None:
     (base / "chunks").mkdir(parents=True, exist_ok=True)
     (base / "book").mkdir(parents=True, exist_ok=True)
 
+    front_matter = base / "front_matter.md"
+    if not front_matter.exists():
+        front_matter.write_text("# Author's Opening\n\n", encoding="utf-8")
+    conclusion = base / "conclusion.md"
+    if not conclusion.exists():
+        conclusion.write_text("# Conclusion\n\n", encoding="utf-8")
+    sources_page = base / "sources.md"
+    if not sources_page.exists():
+        sources_page.write_text("# Sources\n\n", encoding="utf-8")
+
     for silo_num, title in SILO_TITLES.items():
         sdir = silo_dir(slug, silo_num)
         sdir.mkdir(parents=True, exist_ok=True)

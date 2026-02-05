@@ -5,6 +5,7 @@ from urllib.parse import quote_plus
 
 import httpx
 import feedparser
+import requests
 
 from app.config import settings
 from app.services.storage import slugify
@@ -74,4 +75,56 @@ def collect_discovery_urls(topic_name: str, per_feed: int | None = 8) -> list[st
 
     # De-duplicate while preserving order
     deduped = list(dict.fromkeys(urls))
+    return deduped
+
+
+def section_query_templates() -> dict[int, list[str]]:
+    return {
+        1: ["{topic} trend", "{topic} why now", "{topic} market adoption"],
+        2: ["{topic} install guide", "{topic} setup", "{topic} onboarding"],
+        3: ["{topic} architecture", "{topic} how it works", "{topic} core concepts"],
+        4: ["{topic} step by step", "{topic} workflow", "{topic} build guide"],
+        5: ["{topic} use cases", "{topic} case study", "{topic} examples"],
+        6: ["{topic} troubleshooting", "{topic} fail states", "{topic} gotchas"],
+        7: ["{topic} security risks", "{topic} privacy", "{topic} compliance"],
+        8: ["{topic} performance", "{topic} scaling", "{topic} cost"],
+        9: ["{topic} checklist", "{topic} templates", "{topic} commands"],
+        10: ["{topic} roadmap", "{topic} future", "{topic} what's next"],
+    }
+
+
+def cse_search(query: str, date_restrict: str | None = None, num: int = 3) -> list[str]:
+    if not settings.google_cse_api_key:
+        return []
+    params = {
+        "key": settings.google_cse_api_key,
+        "cx": settings.google_cse_cx,
+        "q": query,
+        "num": num,
+    }
+    if date_restrict:
+        params["dateRestrict"] = date_restrict
+    resp = requests.get("https://www.googleapis.com/customsearch/v1", params=params, timeout=20)
+    resp.raise_for_status()
+    data = resp.json()
+    return [item.get("link") for item in data.get("items", []) if item.get("link")]
+
+
+def cse_discover(topic_name: str) -> list[tuple[str, str]]:
+    results: list[tuple[str, str]] = []
+    domains = settings.cse_primary_domains
+    per_query = settings.google_cse_results_per_query
+    date_restrict = settings.google_cse_date_restrict
+    for silo_num, templates in section_query_templates().items():
+        for template in templates:
+            base_query = template.format(topic=topic_name)
+            for domain in domains:
+                query = f"{base_query} site:{domain}"
+                try:
+                    urls = cse_search(query, date_restrict=date_restrict, num=per_query)
+                except Exception:
+                    urls = []
+                for url in urls:
+                    results.append((url, f"cse:silo_{silo_num}"))
+    deduped = list(dict.fromkeys(results))
     return deduped

@@ -11,18 +11,25 @@ import uuid
 from app.services.storage import topic_dir
 
 
-def append_sources(slug: str, urls: Iterable[str], source: str = "manual") -> Path:
-    """Append URLs to the topic inbox meta file as JSONL."""
+def append_sources(slug: str, urls: Iterable[str] | Iterable[tuple[str, str]], source: str = "manual") -> Path:
+    """Append URLs to the topic inbox meta file as JSONL.
+
+    Accepts either a list of URLs or a list of (url, source_label) tuples.
+    """
     inbox_meta = topic_dir(slug) / "inbox" / "meta"
     inbox_meta.mkdir(parents=True, exist_ok=True)
     path = inbox_meta / "sources.jsonl"
     timestamp = datetime.utcnow().isoformat()
 
     with open(path, "a", encoding="utf-8") as handle:
-        for url in urls:
+        for item in urls:
+            if isinstance(item, tuple):
+                url, source_label = item
+            else:
+                url, source_label = item, source
             record = {
                 "url": url,
-                "source": source,
+                "source": source_label,
                 "status": "pending",
                 "added_at": timestamp,
             }

@@ -11,7 +11,7 @@ from sqlalchemy import select, func
 
 from app import models
 from app.database import AsyncSessionLocal
-from app.services.discovery import collect_discovery_urls, github_search_repos
+from app.services.discovery import collect_discovery_urls, github_search_repos, cse_discover
 from app.services.ingest_runner import run_ingest
 from app.services.metrics import word_count
 from app.services.source_queue import queue_sources
@@ -68,7 +68,9 @@ async def run_autopilot(
             feed_urls = collect_discovery_urls(topic_name, per_feed=per_feed)
             repos = await github_search_repos(topic_name, limit=8)
             candidates = list(dict.fromkeys(feed_urls + repos))
+            cse_sources = cse_discover(topic_name)
             queued = await queue_sources(session, topic_id, slug, candidates, source_label="discovery")
+            queued += await queue_sources(session, topic_id, slug, cse_sources, source_label="cse")
 
             ingest_stats = await run_ingest(topic_id, slug, topic_name)
             pending_after = await _pending_count(session, topic_id)
