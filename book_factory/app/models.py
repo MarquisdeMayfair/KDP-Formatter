@@ -117,6 +117,7 @@ class SourceDoc(Base):
     domain = Column(String(255))
     doc_type = Column(String(50), default="url")
     status = Column(String(50), default="pending")
+    source = Column(String(50), default="manual")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     topic = relationship("Topic", back_populates="sources")

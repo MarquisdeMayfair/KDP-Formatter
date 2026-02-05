@@ -101,6 +101,7 @@ class SourceOut(BaseModel):
     domain: Optional[str] = None
     doc_type: str
     status: str
+    source: Optional[str] = None
     created_at: datetime
 
     class Config:
