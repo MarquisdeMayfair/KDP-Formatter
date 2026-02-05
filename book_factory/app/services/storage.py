@@ -71,3 +71,7 @@ def silo_paths(slug: str, silo_number: int) -> Tuple[Path, Path, Path]:
     final_path = sdir / "final.txt"
     audio_path = sdir / "draft.mp3"
     return draft_path, final_path, audio_path
+
+
+def draft_paths(slug: str) -> list[Path]:
+    return [silo_dir(slug, i) / "draft.md" for i in SILO_TITLES]

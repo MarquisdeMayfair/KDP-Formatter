@@ -86,6 +86,10 @@ class Settings(BaseSettings):
     # Ingestion quality gate
     ingest_min_words: int = 300
 
+    # Draft caps (to avoid budget blowouts)
+    draft_max_words_per_silo: int = 5000
+    draft_max_words_total: int = 30000
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

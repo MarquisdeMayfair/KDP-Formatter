@@ -18,7 +18,8 @@ from app.services.ingestion import (
 )
 from app.services.ingest_log import log_failure, log_success
 from app.services.ollama_client import OllamaClient
-from app.services.storage import SILO_TITLES
+from app.services.storage import SILO_TITLES, draft_paths
+from app.services.metrics import word_count, total_word_count
 
 
 async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
@@ -61,10 +62,20 @@ async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
                         forced_silo = None
 
                 for chunk in chunks:
+                    # Enforce total draft cap
+                    if total_word_count([str(p) for p in draft_paths(slug)]) >= settings.draft_max_words_total:
+                        raise ValueError("draft_total_cap")
+
                     if forced_silo is not None:
                         silo_num = forced_silo
                     else:
                         silo_num = await classify_chunk(ollama, chunk.text, topic_name)
+
+                    # Enforce per-silo cap
+                    draft_path = silo_dir(slug, silo_num) / "draft.md"
+                    if word_count(str(draft_path)) >= settings.draft_max_words_per_silo:
+                        raise ValueError("draft_silo_cap")
+
                     silo_title = SILO_TITLES.get(silo_num, "Unclassified")
                     nuggets = await extract_nuggets(ollama, chunk.text, topic_name, silo_title)
                     append_to_silo(slug, silo_num, nuggets)
