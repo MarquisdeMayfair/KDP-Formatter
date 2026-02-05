@@ -18,8 +18,9 @@ from app.services.ingestion import (
 )
 from app.services.ingest_log import log_failure, log_success
 from app.services.ollama_client import OllamaClient
-from app.services.storage import SILO_TITLES, draft_paths
+from app.services.storage import SILO_TITLES, draft_paths, silo_dir
 from app.services.metrics import word_count, total_word_count
+from app.services.runtime_settings import load_runtime_settings
 
 
 async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
@@ -42,6 +43,9 @@ async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
         sources = result.scalars().all()
 
         max_calls = settings.x_max_calls_per_run
+        runtime = load_runtime_settings()
+        max_per_silo = int(runtime.get("draft_max_words_per_silo", settings.draft_max_words_per_silo))
+        max_total = int(runtime.get("draft_max_words_total", settings.draft_max_words_total))
         for source in sources:
             if is_x_url(source.url) and x_calls >= max_calls:
                 continue
@@ -63,7 +67,7 @@ async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
 
                 for chunk in chunks:
                     # Enforce total draft cap
-                    if total_word_count([str(p) for p in draft_paths(slug)]) >= settings.draft_max_words_total:
+                    if total_word_count([str(p) for p in draft_paths(slug)]) >= max_total:
                         raise ValueError("draft_total_cap")
 
                     if forced_silo is not None:
@@ -73,7 +77,7 @@ async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
 
                     # Enforce per-silo cap
                     draft_path = silo_dir(slug, silo_num) / "draft.md"
-                    if word_count(str(draft_path)) >= settings.draft_max_words_per_silo:
+                    if word_count(str(draft_path)) >= max_per_silo:
                         raise ValueError("draft_silo_cap")
 
                     silo_title = SILO_TITLES.get(silo_num, "Unclassified")

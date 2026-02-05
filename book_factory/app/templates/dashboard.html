@@ -197,6 +197,7 @@
                         <th>Status</th>
                         <th>Draft Words</th>
                         <th>Final Words</th>
+                        <th>Draft</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -206,13 +207,46 @@
                         <td class="status">{{ silo.status }}</td>
                         <td>{{ silo.draft_word_count }}</td>
                         <td>{{ silo.final_word_count }}</td>
+                        <td>
+                            {% if silo.draft_available %}
+                            <a class="pill" href="/dashboard/topics/{{ selected_topic.slug }}/silos/{{ silo.silo_number }}/draft">Read draft</a>
+                            {% else %}
+                            <span class="muted">No draft</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td><strong>Totals</strong></td>
+                        <td class="muted">—</td>
+                        <td><strong>{{ draft_total }}</strong></td>
+                        <td><strong>{{ final_total }}</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
             {% else %}
             <p class="muted">No silos available yet.</p>
             {% endif %}
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Draft Caps</h2>
+            <p class="muted">Global caps used during ingestion to prevent runaway wordcount.</p>
+            <form method="post" action="/api/v1/settings/caps">
+                <div class="form-row">
+                    <input name="draft_max_words_per_silo" type="number" value="{{ draft_max_words_per_silo }}">
+                    <input name="draft_max_words_total" type="number" value="{{ draft_max_words_total }}">
+                </div>
+                {% if selected_topic %}
+                <input type="hidden" name="topic" value="{{ selected_topic.slug }}">
+                {% endif %}
+                <div class="actions">
+                    <button type="submit">Save Caps</button>
+                </div>
+            </form>
         </div>
 
         <div class="card" style="margin-top: 24px;">

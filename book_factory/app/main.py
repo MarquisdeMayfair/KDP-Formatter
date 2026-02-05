@@ -4,11 +4,11 @@ from __future__ import annotations
 import logging
 import json
 from pathlib import Path
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 
-from app.api import silos, topics, trends, sources, eve, compile, settings as settings_api, ingest, discovery, autopilot
+from app.api import silos, topics, trends, sources, eve, compile, settings as settings_api, ingest, discovery, autopilot, system
 from app.config import settings
 from app.database import init_db
 from app.services.metrics import word_count
@@ -120,8 +120,15 @@ async def dashboard_view(request: Request, topic: str | None = None):
             for silo in silos:
                 draft_wc = word_count(silo.draft_md_path or "")
                 final_wc = word_count(silo.final_txt_path or "")
+                draft_exists = bool(silo.draft_md_path) and Path(silo.draft_md_path).exists()
                 silo.draft_word_count = draft_wc
                 silo.final_word_count = final_wc
+                silo.draft_available = draft_exists
+            draft_total = sum(silo.draft_word_count or 0 for silo in silos)
+            final_total = sum(silo.final_word_count or 0 for silo in silos)
+        else:
+            draft_total = 0
+            final_total = 0
 
         trends_result = await session.execute(select(models.TrendCandidate).order_by(models.TrendCandidate.discovered_at.desc()))
         trends_list = trends_result.scalars().all()
@@ -153,6 +160,11 @@ async def dashboard_view(request: Request, topic: str | None = None):
                 except (OSError, json.JSONDecodeError):
                     autopilot_last = None
 
+        from app.services.runtime_settings import load_runtime_settings
+        runtime = load_runtime_settings()
+        draft_max_words_per_silo = int(runtime.get("draft_max_words_per_silo", settings.draft_max_words_per_silo))
+        draft_max_words_total = int(runtime.get("draft_max_words_total", settings.draft_max_words_total))
+
     context = {
         "request": request,
         "topics": topics_list,
@@ -162,8 +174,81 @@ async def dashboard_view(request: Request, topic: str | None = None):
         "trends": trends_list,
         "autopilot_status": autopilot_status,
         "autopilot_last": autopilot_last,
+        "draft_total": draft_total,
+        "final_total": final_total,
+        "draft_max_words_per_silo": draft_max_words_per_silo,
+        "draft_max_words_total": draft_max_words_total,
     }
     return templates.TemplateResponse("dashboard.html", context)
+
+
+@app.get("/dashboard/topics/{slug}/silos/{silo_number}/draft", response_class=HTMLResponse)
+async def dashboard_silo_draft(request: Request, slug: str, silo_number: int):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            raise HTTPException(status_code=404, detail="Topic not found")
+
+        silo_result = await session.execute(
+            select(models.Silo).where(
+                models.Silo.topic_id == topic.id,
+                models.Silo.silo_number == silo_number,
+            )
+        )
+        silo = silo_result.scalar_one_or_none()
+        if not silo or not silo.draft_md_path:
+            raise HTTPException(status_code=404, detail="Draft not found")
+
+        draft_path = Path(silo.draft_md_path)
+        if not draft_path.exists():
+            raise HTTPException(status_code=404, detail="Draft not found")
+
+        draft_text = draft_path.read_text(encoding="utf-8")
+
+    context = {
+        "request": request,
+        "topic": topic,
+        "silo": silo,
+        "draft_text": draft_text,
+        "draft_word_count": len(draft_text.split()),
+    }
+    return templates.TemplateResponse("draft_preview.html", context)
+
+
+@app.get("/dashboard/topics/{slug}/silos/{silo_number}/draft/raw", response_class=PlainTextResponse)
+async def dashboard_silo_draft_raw(slug: str, silo_number: int):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            raise HTTPException(status_code=404, detail="Topic not found")
+
+        silo_result = await session.execute(
+            select(models.Silo).where(
+                models.Silo.topic_id == topic.id,
+                models.Silo.silo_number == silo_number,
+            )
+        )
+        silo = silo_result.scalar_one_or_none()
+        if not silo or not silo.draft_md_path:
+            raise HTTPException(status_code=404, detail="Draft not found")
+
+        draft_path = Path(silo.draft_md_path)
+        if not draft_path.exists():
+            raise HTTPException(status_code=404, detail="Draft not found")
+
+        draft_text = draft_path.read_text(encoding="utf-8")
+
+    return PlainTextResponse(draft_text)
 
 
 @app.post("/dashboard/topics")
@@ -303,6 +388,7 @@ app.include_router(trends.router, prefix="/api/v1")
 app.include_router(sources.router, prefix="/api/v1")
 app.include_router(eve.router, prefix="/api/v1")
 app.include_router(autopilot.router, prefix="/api/v1")
+app.include_router(system.router, prefix="/api/v1")
 app.include_router(compile.router, prefix="/api/v1")
 app.include_router(settings_api.router, prefix="/api/v1")
 app.include_router(ingest.router, prefix="/api/v1")

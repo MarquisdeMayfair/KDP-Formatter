@@ -167,6 +167,16 @@ class SiloSettingUpdate(BaseModel):
     template_json: dict | None = None
 
 
+class CapsUpdate(BaseModel):
+    draft_max_words_per_silo: int | None = None
+    draft_max_words_total: int | None = None
+
+
+class CapsOut(BaseModel):
+    draft_max_words_per_silo: int
+    draft_max_words_total: int
+
+
 class AutopilotRequest(BaseModel):
     max_cycles: int = 6
     cooldown_seconds: int = 30
