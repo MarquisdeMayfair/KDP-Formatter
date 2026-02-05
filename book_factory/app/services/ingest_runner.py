@@ -62,7 +62,7 @@ async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
                 source.status = "failed"
                 failed += 1
 
-        await session.commit()
+            await session.commit()
 
     duration = time.monotonic() - start
     return {
