@@ -49,8 +49,13 @@ async def fetch_and_clean(url: str, timeout: int = 20) -> str:
 
         return text
 
-    async with httpx.AsyncClient(timeout=timeout, headers={"User-Agent": "Mozilla/5.0"}) as client:
+    headers = {"User-Agent": "Mozilla/5.0"}
+    async with httpx.AsyncClient(timeout=timeout, headers=headers) as client:
         resp = await client.get(url)
+        if resp.status_code in {403, 429, 451}:
+            # Fallback to Jina reader to bypass common bot blocks.
+            reader_url = f"https://r.jina.ai/http://{url}"
+            resp = await client.get(reader_url)
         resp.raise_for_status()
         html = resp.text
     return _clean_html(html)
