@@ -244,7 +244,7 @@ async def dashboard_add_sources(slug: str, urls: str = Form("")):
 
         await session.commit()
 
-    return {"message": "Sources added"}
+    return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
 
 
 @app.post("/dashboard/topics/{slug}/sources/text")
@@ -274,7 +274,7 @@ async def dashboard_add_source_text(slug: str, text: str = Form("")):
         )
         await session.commit()
 
-    return {"message": "Text added"}
+    return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
 
 
 @app.post("/dashboard/topics/{slug}/discover")
