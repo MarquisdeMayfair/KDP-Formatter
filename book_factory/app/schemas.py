@@ -16,6 +16,8 @@ class TopicCreate(BaseModel):
     target_audience: Optional[str] = None
     stance: Optional[str] = None
     taboo_list: List[str] = Field(default_factory=list)
+    keywords: List[str] = Field(default_factory=list)
+    seed_urls: List[str] = Field(default_factory=list)
     draft_target_words: int = 25000
     final_target_words: int = 30000
     rrp_usd: float = 9.99
@@ -44,11 +46,18 @@ class TopicDetail(TopicSummary):
     target_audience: Optional[str] = None
     stance: Optional[str] = None
     taboo_list: List[str]
+    keywords: List[str]
+    seed_urls: List[str]
     draft_target_words: int
     final_target_words: int
     rrp_usd: float
     expected_units: int
     max_cost_usd: float
+
+
+class TopicUpdate(BaseModel):
+    keywords: List[str] | None = None
+    seed_urls: List[str] | None = None
 
 
 class SiloSummary(BaseModel):

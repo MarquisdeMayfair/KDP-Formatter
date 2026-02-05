@@ -31,6 +31,8 @@ class Topic(Base):
     target_audience = Column(Text)
     stance = Column(String(255))
     taboo_list = Column(JSON, default=list)
+    keywords = Column(JSON, default=list)
+    seed_urls = Column(JSON, default=list)
     draft_target_words = Column(Integer, default=25000)
     final_target_words = Column(Integer, default=30000)
     rrp_usd = Column(Float, default=9.99)

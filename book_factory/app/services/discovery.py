@@ -9,10 +9,11 @@ import requests
 
 from app.config import settings
 from app.services.storage import slugify
+from app.services.topic_utils import build_or_query, normalize_terms
 
 
-def reddit_search_feed(topic: str) -> str:
-    query = quote_plus(topic)
+def reddit_search_feed(query: str) -> str:
+    query = quote_plus(query)
     return f"https://www.reddit.com/search.rss?q={query}&sort=hot"
 
 
@@ -20,21 +21,23 @@ def medium_tag_feed(topic: str) -> str:
     return f"https://medium.com/feed/tag/{slugify(topic)}"
 
 
-def substack_search_feed(topic: str) -> str | None:
+def substack_search_feed(query: str) -> str | None:
     if not settings.rsshub_base_url:
         return None
-    query = quote_plus(topic)
+    query = quote_plus(query)
     base = settings.rsshub_base_url.rstrip("/")
     return f"{base}/substack/search/{query}"
 
 
-def github_search_url(topic: str) -> str:
-    return f"https://github.com/search?q={quote_plus(topic)}&type=repositories"
+def github_search_url(topic: str, keywords: list[str] | None = None) -> str:
+    query = build_or_query(normalize_terms(topic, keywords)) or topic
+    return f"https://github.com/search?q={quote_plus(query)}&type=repositories"
 
 
-async def github_search_repos(topic: str, limit: int = 10) -> list[str]:
+async def github_search_repos(topic: str, keywords: list[str] | None = None, limit: int = 10) -> list[str]:
     """Return top GitHub repo URLs for a topic."""
-    query = quote_plus(topic)
+    query = build_or_query(normalize_terms(topic, keywords)) or topic
+    query = quote_plus(query)
     url = f"https://api.github.com/search/repositories?q={query}&sort=stars&order=desc&per_page={limit}"
     headers = {"Accept": "application/vnd.github+json"}
     if settings.github_token:
@@ -60,12 +63,19 @@ def extract_feed_entries(feed_url: str, limit: int | None = 8) -> list[str]:
     return urls
 
 
-def collect_discovery_urls(topic_name: str, per_feed: int | None = 8) -> list[str]:
+def collect_discovery_urls(
+    topic_name: str,
+    per_feed: int | None = 8,
+    keywords: list[str] | None = None,
+) -> list[str]:
+    terms = normalize_terms(topic_name, keywords)
+    query = build_or_query(terms) or topic_name
+    primary_term = terms[0] if terms else topic_name
     feeds: list[str] = [
-        reddit_search_feed(topic_name),
-        medium_tag_feed(topic_name),
+        reddit_search_feed(query),
+        medium_tag_feed(primary_term),
     ]
-    substack = substack_search_feed(topic_name)
+    substack = substack_search_feed(query)
     if substack:
         feeds.append(substack)
 
@@ -110,14 +120,15 @@ def cse_search(query: str, date_restrict: str | None = None, num: int = 3) -> li
     return [item.get("link") for item in data.get("items", []) if item.get("link")]
 
 
-def cse_discover(topic_name: str) -> list[tuple[str, str]]:
+def cse_discover(topic_name: str, keywords: list[str] | None = None) -> list[tuple[str, str]]:
     results: list[tuple[str, str]] = []
     domains = settings.cse_primary_domains
     per_query = settings.google_cse_results_per_query
     date_restrict = settings.google_cse_date_restrict
+    topic_query = build_or_query(normalize_terms(topic_name, keywords)) or topic_name
     for silo_num, templates in section_query_templates().items():
         for template in templates:
-            base_query = template.format(topic=topic_name)
+            base_query = template.format(topic=topic_query)
             for domain in domains:
                 query = f"{base_query} site:{domain}"
                 try:

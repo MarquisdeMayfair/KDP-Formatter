@@ -18,6 +18,7 @@ from app.services.storage import ensure_topic_structure, silo_paths, slugify
 from app.services.source_inbox import append_sources, append_text
 from app.services.discovery import collect_discovery_urls, github_search_repos
 from app.services.source_queue import queue_sources
+from app.services.topic_utils import parse_list_field, parse_url_list, format_list_field
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -126,9 +127,13 @@ async def dashboard_view(request: Request, topic: str | None = None):
                 silo.draft_available = draft_exists
             draft_total = sum(silo.draft_word_count or 0 for silo in silos)
             final_total = sum(silo.final_word_count or 0 for silo in silos)
+            selected_topic_keywords = format_list_field(selected_topic.keywords or [])
+            selected_topic_seed_urls = format_list_field(selected_topic.seed_urls or [], sep="\n")
         else:
             draft_total = 0
             final_total = 0
+            selected_topic_keywords = ""
+            selected_topic_seed_urls = ""
 
         trends_result = await session.execute(select(models.TrendCandidate).order_by(models.TrendCandidate.discovered_at.desc()))
         trends_list = trends_result.scalars().all()
@@ -178,6 +183,8 @@ async def dashboard_view(request: Request, topic: str | None = None):
         "final_total": final_total,
         "draft_max_words_per_silo": draft_max_words_per_silo,
         "draft_max_words_total": draft_max_words_total,
+        "selected_topic_keywords": selected_topic_keywords,
+        "selected_topic_seed_urls": selected_topic_seed_urls,
     }
     return templates.TemplateResponse("dashboard.html", context)
 
@@ -261,6 +268,8 @@ async def dashboard_create_topic(
     target_audience: str = Form(""),
     stance: str = Form(""),
     draft_target_words: int = Form(25000),
+    keywords: str = Form(""),
+    seed_urls: str = Form(""),
 ):
     from sqlalchemy import select
     from app.database import AsyncSessionLocal
@@ -282,6 +291,8 @@ async def dashboard_create_topic(
             target_audience=target_audience or None,
             stance=stance or None,
             draft_target_words=draft_target_words,
+            keywords=parse_list_field(keywords),
+            seed_urls=parse_url_list(seed_urls),
             status="research",
         )
         session.add(topic)
@@ -312,6 +323,7 @@ async def dashboard_add_sources(slug: str, urls: str = Form("")):
     from sqlalchemy import select
     from app.database import AsyncSessionLocal
     from app import models
+    from urllib.parse import urlparse
 
     url_list = [line.strip() for line in urls.splitlines() if line.strip()]
     if not url_list:
@@ -325,8 +337,43 @@ async def dashboard_add_sources(slug: str, urls: str = Form("")):
 
         append_sources(slug, url_list, source="dashboard")
         for url in url_list:
-            session.add(models.SourceDoc(topic_id=topic.id, url=url, status="pending"))
+            try:
+                domain = urlparse(url).netloc
+            except ValueError:
+                domain = ""
+            session.add(
+                models.SourceDoc(
+                    topic_id=topic.id,
+                    url=url,
+                    domain=domain,
+                    status="pending",
+                    source="dashboard",
+                )
+            )
 
+        await session.commit()
+
+    return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
+
+
+@app.post("/dashboard/topics/{slug}/meta")
+async def dashboard_update_topic_meta(
+    slug: str,
+    keywords: str = Form(""),
+    seed_urls: str = Form(""),
+):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            return {"error": "Topic not found"}
+
+        topic.keywords = parse_list_field(keywords)
+        topic.seed_urls = parse_url_list(seed_urls)
         await session.commit()
 
     return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
@@ -355,6 +402,7 @@ async def dashboard_add_source_text(slug: str, text: str = Form("")):
                 domain="local",
                 doc_type="text",
                 status="pending",
+                source="dashboard",
             )
         )
         await session.commit()
@@ -374,8 +422,9 @@ async def dashboard_discover_sources(slug: str):
         if not topic:
             return {"error": "Topic not found"}
 
-        feed_urls = collect_discovery_urls(topic.name, per_feed=8)
-        repos = await github_search_repos(topic.name, limit=8)
+        await queue_sources(session, topic.id, topic.slug, topic.seed_urls or [], source_label="seed")
+        feed_urls = collect_discovery_urls(topic.name, per_feed=8, keywords=topic.keywords)
+        repos = await github_search_repos(topic.name, keywords=topic.keywords, limit=8)
         candidates = list(dict.fromkeys(feed_urls + repos))
         await queue_sources(session, topic.id, topic.slug, candidates, source_label="discovery")
 

@@ -57,6 +57,7 @@ async def add_sources(
             url=url,
             domain=_domain(url),
             status="pending",
+            source=payload.source,
         )
         db.add(doc)
         created.append(doc)
@@ -85,6 +86,7 @@ async def add_source_text(
         domain="local",
         doc_type="text",
         status="pending",
+        source=payload.source,
     )
     db.add(doc)
     await db.commit()

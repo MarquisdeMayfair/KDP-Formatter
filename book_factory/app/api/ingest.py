@@ -25,7 +25,7 @@ async def _get_topic(db: AsyncSession, slug: str) -> models.Topic:
 @router.post("/ingest")
 async def ingest_topic(slug: str, background: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     topic = await _get_topic(db, slug)
-    background.add_task(_schedule_ingest, topic.id, slug, topic.name)
+    background.add_task(_schedule_ingest, topic.id, slug, topic.name, topic.keywords)
     return {"message": "Ingestion started"}
 
 
@@ -43,9 +43,14 @@ async def ingest_failures(slug: str, db: AsyncSession = Depends(get_db)):
     return {"failures": records[-50:]}
 
 
-def _schedule_ingest(topic_id: int, slug: str, topic_name: str) -> None:
+def _schedule_ingest(
+    topic_id: int,
+    slug: str,
+    topic_name: str,
+    topic_keywords: list[str] | None = None,
+) -> None:
     try:
         loop = asyncio.get_running_loop()
-        loop.create_task(run_ingest(topic_id, slug, topic_name))
+        loop.create_task(run_ingest(topic_id, slug, topic_name, topic_keywords=topic_keywords))
     except RuntimeError:
-        asyncio.run(run_ingest(topic_id, slug, topic_name))
+        asyncio.run(run_ingest(topic_id, slug, topic_name, topic_keywords=topic_keywords))

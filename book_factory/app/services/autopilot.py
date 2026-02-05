@@ -40,6 +40,8 @@ async def run_autopilot(
     topic_id: int,
     slug: str,
     topic_name: str,
+    topic_keywords: list[str] | None = None,
+    seed_urls: list[str] | None = None,
     max_cycles: int = 6,
     cooldown_seconds: int = 30,
     stop_wordcount: int | None = None,
@@ -65,14 +67,15 @@ async def run_autopilot(
             pending_before = await _pending_count(session, topic_id)
 
             per_feed = None if pending_before < 50 else 8
-            feed_urls = collect_discovery_urls(topic_name, per_feed=per_feed)
-            repos = await github_search_repos(topic_name, limit=8)
+            seeded = await queue_sources(session, topic_id, slug, seed_urls or [], source_label="seed")
+            feed_urls = collect_discovery_urls(topic_name, per_feed=per_feed, keywords=topic_keywords)
+            repos = await github_search_repos(topic_name, keywords=topic_keywords, limit=8)
             candidates = list(dict.fromkeys(feed_urls + repos))
-            cse_sources = cse_discover(topic_name)
+            cse_sources = cse_discover(topic_name, keywords=topic_keywords)
             queued = await queue_sources(session, topic_id, slug, candidates, source_label="discovery")
             queued += await queue_sources(session, topic_id, slug, cse_sources, source_label="cse")
 
-            ingest_stats = await run_ingest(topic_id, slug, topic_name)
+            ingest_stats = await run_ingest(topic_id, slug, topic_name, topic_keywords=topic_keywords)
             pending_after = await _pending_count(session, topic_id)
 
         draft_words = _draft_wordcount_total(slug)
@@ -82,6 +85,7 @@ async def run_autopilot(
             "timestamp": datetime.utcnow().isoformat(),
             "cycle": cycle,
             "queued": queued,
+            "seeded": seeded,
             "candidates": len(candidates),
             "pending_before": pending_before,
             "pending_after": pending_after,

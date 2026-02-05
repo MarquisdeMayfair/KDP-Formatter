@@ -173,10 +173,32 @@
                     <input name="stance" placeholder="Stance">
                     <input name="draft_target_words" placeholder="Draft target words" value="25000">
                 </div>
+                <div class="form-row" style="margin-top: 12px;">
+                    <textarea name="keywords" placeholder="Keywords / aliases (comma or newline)"></textarea>
+                    <textarea name="seed_urls" placeholder="Seed URLs (one per line)"></textarea>
+                </div>
                 <div class="actions">
                     <button type="submit">Create Topic</button>
                 </div>
             </form>
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Topic Keywords + Seeds</h2>
+            {% if selected_topic %}
+            <p class="muted">Aliases boost discovery + ingestion relevance. Seed URLs are queued before discovery.</p>
+            <form method="post" action="/dashboard/topics/{{ selected_topic.slug }}/meta">
+                <div class="form-row">
+                    <textarea name="keywords" placeholder="Keywords / aliases (comma or newline)">{{ selected_topic_keywords }}</textarea>
+                    <textarea name="seed_urls" placeholder="Seed URLs (one per line)">{{ selected_topic_seed_urls }}</textarea>
+                </div>
+                <div class="actions">
+                    <button type="submit">Save Topic Settings</button>
+                </div>
+            </form>
+            {% else %}
+            <p class="muted">Select a topic to edit keywords and seed URLs.</p>
+            {% endif %}
         </div>
 
         <div class="card" style="margin-top: 24px;">

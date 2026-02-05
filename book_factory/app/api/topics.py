@@ -36,6 +36,8 @@ async def create_topic(
         target_audience=payload.target_audience,
         stance=payload.stance,
         taboo_list=payload.taboo_list,
+        keywords=payload.keywords,
+        seed_urls=payload.seed_urls,
         draft_target_words=payload.draft_target_words,
         final_target_words=payload.final_target_words,
         rrp_usd=payload.rrp_usd,
@@ -89,6 +91,27 @@ async def get_topic(slug: str, db: AsyncSession = Depends(get_db)):
     topic = result.scalar_one_or_none()
     if not topic:
         raise HTTPException(status_code=404, detail="Topic not found")
+    return topic
+
+
+@router.patch("/{slug}", response_model=schemas.TopicDetail)
+async def update_topic(
+    slug: str,
+    payload: schemas.TopicUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(models.Topic).where(models.Topic.slug == slug))
+    topic = result.scalar_one_or_none()
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+
+    if payload.keywords is not None:
+        topic.keywords = payload.keywords
+    if payload.seed_urls is not None:
+        topic.seed_urls = payload.seed_urls
+
+    await db.commit()
+    await db.refresh(topic)
     return topic
 
 

@@ -31,6 +31,8 @@ def _schedule_autopilot(
     topic_id: int,
     slug: str,
     topic_name: str,
+    topic_keywords: list[str] | None,
+    seed_urls: list[str] | None,
     request: schemas.AutopilotRequest,
 ) -> None:
     async def _runner():
@@ -38,6 +40,8 @@ def _schedule_autopilot(
             topic_id=topic_id,
             slug=slug,
             topic_name=topic_name,
+            topic_keywords=topic_keywords,
+            seed_urls=seed_urls,
             max_cycles=request.max_cycles,
             cooldown_seconds=request.cooldown_seconds,
             stop_wordcount=request.stop_wordcount,
@@ -70,7 +74,15 @@ async def start_autopilot(
         payload = dict(form)
 
     autopilot_req = schemas.AutopilotRequest(**payload)
-    background.add_task(_schedule_autopilot, topic.id, slug, topic.name, autopilot_req)
+    background.add_task(
+        _schedule_autopilot,
+        topic.id,
+        slug,
+        topic.name,
+        topic.keywords,
+        topic.seed_urls,
+        autopilot_req,
+    )
     if request.headers.get("content-type", "").startswith("application/x-www-form-urlencoded"):
         return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
     return schemas.AutopilotResponse(

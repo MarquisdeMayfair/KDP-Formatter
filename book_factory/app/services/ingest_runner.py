@@ -21,12 +21,19 @@ from app.services.ollama_client import OllamaClient
 from app.services.storage import SILO_TITLES, draft_paths, silo_dir
 from app.services.metrics import word_count, total_word_count
 from app.services.runtime_settings import load_runtime_settings
+from app.services.topic_utils import normalize_terms, text_mentions_term
 
 
-async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
+async def run_ingest(
+    topic_id: int,
+    slug: str,
+    topic_name: str,
+    topic_keywords: list[str] | None = None,
+) -> dict:
     """Process pending sources and return stats."""
     start = time.monotonic()
     ollama = OllamaClient()
+    terms = normalize_terms(topic_name, topic_keywords)
 
     processed = 0
     extracted = 0
@@ -55,6 +62,8 @@ async def run_ingest(topic_id: int, slug: str, topic_name: str) -> dict:
                 text = await fetch_and_clean(source.url)
                 if len(text.split()) < settings.ingest_min_words:
                     raise ValueError("too_short")
+                if terms and not text_mentions_term(text[:8000], terms):
+                    raise ValueError("off_topic")
                 chunks = chunk_text(text)
 
                 # Route directly if source labeled for a silo, else classify.
