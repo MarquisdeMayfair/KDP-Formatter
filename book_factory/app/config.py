@@ -58,7 +58,10 @@ class Settings(BaseSettings):
     x_bearer_token: str = ""
 
     # GitHub
-    github_token: str = ""
+    github_token: str | None = None
+
+    # Google CSE
+    google_cse_api_key: str | None = None
 
     # RSSHub (optional for Substack discovery)
     rsshub_base_url: str = ""
