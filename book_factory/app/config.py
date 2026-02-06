@@ -112,7 +112,10 @@ class Settings(BaseSettings):
     swarm_web_max_words: int = 300
 
     class Config:
-        env_file = ".env"
+        env_file = [
+            str(BASE_DIR / ".env"),
+            str(BASE_DIR.parent / ".env"),
+        ]
         env_file_encoding = "utf-8"
 
     @field_validator("trend_rss_feeds", mode="before")
