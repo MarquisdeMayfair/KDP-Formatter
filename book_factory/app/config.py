@@ -34,6 +34,17 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"
 
+    # OpenAI-compatible (GPT, Grok, etc.)
+    openai_api_key: str = ""
+    openai_base_url: str = "https://api.openai.com"
+    openai_model: str = "gpt-4.1"
+    openai_compat_path: str = "/v1/chat/completions"
+
+    # Grok (xAI) OpenAI-compatible endpoint
+    grok_api_key: str = ""
+    grok_base_url: str = "https://api.x.ai"
+    grok_model: str = "grok-2-latest"
+
     # Eve Integration
     eve_webhook_url: str = ""
     eve_api_key: str = ""
@@ -89,6 +100,13 @@ class Settings(BaseSettings):
     # Draft caps (to avoid budget blowouts)
     draft_max_words_per_silo: int = 5000
     draft_max_words_total: int = 30000
+
+    # Swarm / ghostwriter settings
+    swarm_writer_provider: str = "anthropic"  # anthropic|openai|grok|ollama
+    swarm_research_provider: str = "grok"  # grok|openai|anthropic|ollama|none
+    swarm_max_parallel: int = 3
+    swarm_use_x: bool = True
+    swarm_include_unassigned_ideas: bool = True
 
     class Config:
         env_file = ".env"

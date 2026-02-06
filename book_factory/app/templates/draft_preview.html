@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draft Preview</title>
+    <style>
+        :root {
+            --ink: #0f172a;
+            --slate: #475569;
+            --paper: #f8fafc;
+            --accent: #2563eb;
+            --accent-dark: #1e3a8a;
+            --card: #ffffff;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: "Georgia", serif; background: var(--paper); color: var(--ink); margin: 0; }
+        header { background: linear-gradient(135deg, #111827, #1f2937); color: #fff; padding: 28px 32px; }
+        header h1 { margin: 0 0 6px 0; font-size: 26px; }
+        header p { margin: 0; opacity: 0.8; font-family: "Arial", sans-serif; }
+        .container { padding: 32px; max-width: 1100px; margin: 0 auto; }
+        .actions a { display: inline-block; margin: 0 12px 12px 0; padding: 10px 14px; background: var(--accent); color: #fff; text-decoration: none; border-radius: 8px; border: 0; font-family: "Arial", sans-serif; }
+        .actions a.secondary { background: #111827; }
+        .meta { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 16px; margin-bottom: 18px; font-family: "Arial", sans-serif; color: var(--slate); }
+        .meta span { margin-right: 16px; }
+        .draft-body { background: var(--card); border-radius: 14px; border: 1px solid var(--border); padding: 22px; white-space: pre-wrap; line-height: 1.65; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ topic.name }}: {{ silo.custom_title or silo.name_template }}</h1>
+        <p>Silo {{ silo.silo_number }} {{ draft_label or "draft" }} preview</p>
+    </header>
+
+    <div class="container">
+        <div class="actions">
+            <a href="/dashboard?topic={{ topic.slug }}">Back to Dashboard</a>
+            <a class="secondary" href="{{ raw_path or ('/dashboard/topics/' ~ topic.slug ~ '/silos/' ~ silo.silo_number ~ '/draft/raw') }}">Open Raw</a>
+        </div>
+
+        <div class="meta">
+            <span>Status: {{ silo.status }}</span>
+            <span>Draft words: {{ draft_word_count }}</span>
+        </div>
+
+        <pre class="draft-body">{{ draft_text }}</pre>
+    </div>
+</body>
+</html>

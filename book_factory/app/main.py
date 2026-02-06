@@ -3,12 +3,28 @@ from __future__ import annotations
 
 import logging
 import json
+import asyncio
 from pathlib import Path
-from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi import FastAPI, Request, Form, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 
-from app.api import silos, topics, trends, sources, eve, compile, settings as settings_api, ingest, discovery, autopilot, system
+from app.api import (
+    silos,
+    topics,
+    trends,
+    sources,
+    eve,
+    compile,
+    settings as settings_api,
+    ingest,
+    discovery,
+    autopilot,
+    system,
+    ideas,
+    briefs,
+    swarm,
+)
 from app.config import settings
 from app.database import init_db
 from app.services.metrics import word_count
@@ -19,6 +35,7 @@ from app.services.source_inbox import append_sources, append_text
 from app.services.discovery import collect_discovery_urls, github_search_repos
 from app.services.source_queue import queue_sources
 from app.services.topic_utils import parse_list_field, parse_url_list, format_list_field
+from app.services.swarm import ensure_briefs, swarm_draft_path, auto_assign_ideas, run_swarm
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -122,9 +139,11 @@ async def dashboard_view(request: Request, topic: str | None = None):
                 draft_wc = word_count(silo.draft_md_path or "")
                 final_wc = word_count(silo.final_txt_path or "")
                 draft_exists = bool(silo.draft_md_path) and Path(silo.draft_md_path).exists()
+                swarm_exists = swarm_draft_path(selected_topic.slug, silo.silo_number).exists()
                 silo.draft_word_count = draft_wc
                 silo.final_word_count = final_wc
                 silo.draft_available = draft_exists
+                silo.swarm_available = swarm_exists
             draft_total = sum(silo.draft_word_count or 0 for silo in silos)
             final_total = sum(silo.final_word_count or 0 for silo in silos)
             selected_topic_keywords = format_list_field(selected_topic.keywords or [])
@@ -140,10 +159,15 @@ async def dashboard_view(request: Request, topic: str | None = None):
 
         autopilot_status = {}
         autopilot_last = None
+        swarm_last = None
+        idea_counts = {}
+        unassigned_ideas = []
+        briefs = []
         if selected_topic:
             metrics_dir = Path(settings.storage_path) / selected_topic.slug / "metrics"
             status_path = metrics_dir / "autopilot_status.json"
             log_path = metrics_dir / "autopilot.jsonl"
+            swarm_log = metrics_dir / "swarm.jsonl"
 
             if status_path.exists():
                 try:
@@ -165,6 +189,35 @@ async def dashboard_view(request: Request, topic: str | None = None):
                 except (OSError, json.JSONDecodeError):
                     autopilot_last = None
 
+            if swarm_log.exists():
+                try:
+                    with open(swarm_log, "rb") as handle:
+                        try:
+                            handle.seek(-2048, 2)
+                        except OSError:
+                            handle.seek(0)
+                        chunk = handle.read().decode("utf-8", errors="ignore")
+                        lines = [line for line in chunk.splitlines() if line.strip()]
+                        if lines:
+                            swarm_last = json.loads(lines[-1])
+                except (OSError, json.JSONDecodeError):
+                    swarm_last = None
+
+            ideas_result = await session.execute(
+                select(models.IdeaItem).where(models.IdeaItem.topic_id == selected_topic.id)
+            )
+            ideas_list = ideas_result.scalars().all()
+            for idea in ideas_list:
+                idea_counts[idea.status] = idea_counts.get(idea.status, 0) + 1
+                if idea.silo_number is None and idea.status == "backlog":
+                    unassigned_ideas.append(idea)
+
+            await ensure_briefs(selected_topic.id, selected_topic.slug)
+            briefs_result = await session.execute(
+                select(models.ChapterBrief).where(models.ChapterBrief.topic_id == selected_topic.id)
+            )
+            briefs = briefs_result.scalars().all()
+
         from app.services.runtime_settings import load_runtime_settings
         runtime = load_runtime_settings()
         draft_max_words_per_silo = int(runtime.get("draft_max_words_per_silo", settings.draft_max_words_per_silo))
@@ -179,6 +232,10 @@ async def dashboard_view(request: Request, topic: str | None = None):
         "trends": trends_list,
         "autopilot_status": autopilot_status,
         "autopilot_last": autopilot_last,
+        "swarm_last": swarm_last,
+        "idea_counts": idea_counts,
+        "unassigned_ideas": unassigned_ideas[:8],
+        "briefs": briefs,
         "draft_total": draft_total,
         "final_total": final_total,
         "draft_max_words_per_silo": draft_max_words_per_silo,
@@ -225,6 +282,54 @@ async def dashboard_silo_draft(request: Request, slug: str, silo_number: int):
         "draft_word_count": len(draft_text.split()),
     }
     return templates.TemplateResponse("draft_preview.html", context)
+
+
+@app.get("/dashboard/topics/{slug}/silos/{silo_number}/swarm", response_class=HTMLResponse)
+async def dashboard_silo_swarm_draft(request: Request, slug: str, silo_number: int):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            raise HTTPException(status_code=404, detail="Topic not found")
+
+        silo_result = await session.execute(
+            select(models.Silo).where(
+                models.Silo.topic_id == topic.id,
+                models.Silo.silo_number == silo_number,
+            )
+        )
+        silo = silo_result.scalar_one_or_none()
+        if not silo:
+            raise HTTPException(status_code=404, detail="Silo not found")
+
+        draft_path = swarm_draft_path(slug, silo_number)
+        if not draft_path.exists():
+            raise HTTPException(status_code=404, detail="Swarm draft not found")
+
+        draft_text = draft_path.read_text(encoding="utf-8")
+
+    context = {
+        "request": request,
+        "topic": topic,
+        "silo": silo,
+        "draft_text": draft_text,
+        "draft_word_count": len(draft_text.split()),
+        "draft_label": "Swarm draft",
+        "raw_path": f"/dashboard/topics/{slug}/silos/{silo_number}/swarm/raw",
+    }
+    return templates.TemplateResponse("draft_preview.html", context)
+
+
+@app.get("/dashboard/topics/{slug}/silos/{silo_number}/swarm/raw", response_class=PlainTextResponse)
+async def dashboard_silo_swarm_draft_raw(slug: str, silo_number: int):
+    draft_path = swarm_draft_path(slug, silo_number)
+    if not draft_path.exists():
+        raise HTTPException(status_code=404, detail="Swarm draft not found")
+    return PlainTextResponse(draft_path.read_text(encoding="utf-8"))
 
 
 @app.get("/dashboard/topics/{slug}/silos/{silo_number}/draft/raw", response_class=PlainTextResponse)
@@ -410,6 +515,131 @@ async def dashboard_add_source_text(slug: str, text: str = Form("")):
     return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
 
 
+@app.post("/dashboard/topics/{slug}/ideas")
+async def dashboard_add_ideas(slug: str, ideas: str = Form("")):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    idea_list = [line.strip() for line in ideas.splitlines() if line.strip()]
+    if not idea_list:
+        return {"error": "No ideas provided"}
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            return {"error": "Topic not found"}
+
+        for idea in idea_list:
+            session.add(
+                models.IdeaItem(
+                    topic_id=topic.id,
+                    text=idea,
+                    status="backlog",
+                    source="dashboard",
+                )
+            )
+        await session.commit()
+
+    return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
+
+
+@app.post("/dashboard/topics/{slug}/ideas/auto-assign")
+async def dashboard_auto_assign_ideas(slug: str):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            return {"error": "Topic not found"}
+
+    await auto_assign_ideas(topic.id, topic.name)
+    return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
+
+
+@app.post("/dashboard/topics/{slug}/briefs")
+async def dashboard_update_brief(
+    slug: str,
+    silo_number: int = Form(...),
+    title: str = Form(""),
+    goal: str = Form(""),
+    outline: str = Form(""),
+    notes: str = Form(""),
+):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    outline_list = [line.strip() for line in outline.splitlines() if line.strip()]
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            return {"error": "Topic not found"}
+
+        await ensure_briefs(topic.id, topic.slug)
+        brief_result = await session.execute(
+            select(models.ChapterBrief).where(
+                models.ChapterBrief.topic_id == topic.id,
+                models.ChapterBrief.silo_number == silo_number,
+            )
+        )
+        brief = brief_result.scalar_one_or_none()
+        if not brief:
+            return {"error": "Brief not found"}
+
+        if title:
+            brief.title = title
+        if goal:
+            brief.goal = goal
+        if outline_list:
+            brief.outline = outline_list
+        brief.notes = notes
+        await session.commit()
+
+    return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
+
+
+@app.post("/dashboard/topics/{slug}/swarm/run")
+async def dashboard_swarm_run(
+    slug: str,
+    background: BackgroundTasks,
+    include_unassigned: str = Form("true"),
+):
+    from sqlalchemy import select
+    from app.database import AsyncSessionLocal
+    from app import models
+
+    async with AsyncSessionLocal() as session:
+        topic_result = await session.execute(select(models.Topic).where(models.Topic.slug == slug))
+        topic = topic_result.scalar_one_or_none()
+        if not topic:
+            return {"error": "Topic not found"}
+
+    include_unassigned_flag = str(include_unassigned).lower() in ("1", "true", "yes", "on")
+    def _schedule():
+        return run_swarm(
+            topic.id,
+            topic.slug,
+            topic.name,
+            topic.author_voice_preset,
+            None,
+            include_unassigned_flag,
+        )
+
+    try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(_schedule())
+    except RuntimeError:
+        background.add_task(asyncio.run, _schedule())
+    return RedirectResponse(url=f"/dashboard?topic={slug}", status_code=303)
+
+
 @app.post("/dashboard/topics/{slug}/discover")
 async def dashboard_discover_sources(slug: str):
     from sqlalchemy import select
@@ -442,3 +672,6 @@ app.include_router(compile.router, prefix="/api/v1")
 app.include_router(settings_api.router, prefix="/api/v1")
 app.include_router(ingest.router, prefix="/api/v1")
 app.include_router(discovery.router, prefix="/api/v1")
+app.include_router(ideas.router, prefix="/api/v1")
+app.include_router(briefs.router, prefix="/api/v1")
+app.include_router(swarm.router, prefix="/api/v1")

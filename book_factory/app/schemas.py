@@ -132,6 +132,58 @@ class AuthorNoteOut(BaseModel):
         from_attributes = True
 
 
+class IdeaCreate(BaseModel):
+    ideas: List[str]
+    source: str = "user"
+
+
+class IdeaOut(BaseModel):
+    id: int
+    text: str
+    status: str
+    silo_number: Optional[int] = None
+    tags: List[str]
+    source: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class IdeaUpdate(BaseModel):
+    status: Optional[str] = None
+    silo_number: Optional[int] = None
+    tags: Optional[List[str]] = None
+
+
+class BriefOut(BaseModel):
+    id: int
+    silo_number: int
+    title: str
+    goal: str
+    outline: List[str]
+    notes: str
+    status: str
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BriefUpdate(BaseModel):
+    title: Optional[str] = None
+    goal: Optional[str] = None
+    outline: Optional[List[str]] = None
+    notes: Optional[str] = None
+    status: Optional[str] = None
+
+
+class SwarmRunRequest(BaseModel):
+    silos: Optional[List[int]] = None
+    include_unassigned_ideas: bool = True
+
+
 class WriteResponse(BaseModel):
     message: str
     final_path: Optional[str] = None

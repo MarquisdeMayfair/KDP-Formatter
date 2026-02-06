@@ -220,6 +220,7 @@
                         <th>Draft Words</th>
                         <th>Final Words</th>
                         <th>Draft</th>
+                        <th>Swarm Draft</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -234,6 +235,13 @@
                             <a class="pill" href="/dashboard/topics/{{ selected_topic.slug }}/silos/{{ silo.silo_number }}/draft">Read draft</a>
                             {% else %}
                             <span class="muted">No draft</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if silo.swarm_available %}
+                            <a class="pill" href="/dashboard/topics/{{ selected_topic.slug }}/silos/{{ silo.silo_number }}/swarm">Read swarm</a>
+                            {% else %}
+                            <span class="muted">No swarm draft</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -251,6 +259,118 @@
             </table>
             {% else %}
             <p class="muted">No silos available yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Idea Pool (Scrum Backlog)</h2>
+            {% if selected_topic %}
+            <p class="muted">Drop brainstormed points. Agents will auto-assign to chapters.</p>
+            <form method="post" action="/dashboard/topics/{{ selected_topic.slug }}/ideas">
+                <textarea name="ideas" placeholder="One idea per line..."></textarea>
+                <div class="actions">
+                    <button type="submit">Add Ideas</button>
+                </div>
+            </form>
+            <div class="actions">
+                <form method="post" action="/dashboard/topics/{{ selected_topic.slug }}/ideas/auto-assign">
+                    <button type="submit" class="secondary">Auto-Assign Ideas</button>
+                </form>
+            </div>
+            <div class="note" style="margin-top: 12px;">
+                <strong>Counts:</strong>
+                <span class="pill">Backlog {{ idea_counts.get('backlog', 0) }}</span>
+                <span class="pill">Assigned {{ idea_counts.get('assigned', 0) }}</span>
+                <span class="pill">Used {{ idea_counts.get('used', 0) }}</span>
+            </div>
+            {% if unassigned_ideas %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Backlog (sample)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for idea in unassigned_ideas %}
+                    <tr><td>{{ idea.text }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            {% else %}
+            <p class="muted">Select a topic to add ideas.</p>
+            {% endif %}
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Chapter Briefs</h2>
+            {% if selected_topic %}
+            <form method="post" action="/dashboard/topics/{{ selected_topic.slug }}/briefs">
+                <div class="form-row">
+                    <select name="silo_number">
+                        {% for silo in silos %}
+                        <option value="{{ silo.silo_number }}">{{ silo.silo_number }}. {{ silo.custom_title or silo.name_template }}</option>
+                        {% endfor %}
+                    </select>
+                    <input name="title" placeholder="Brief title (optional)">
+                </div>
+                <div class="form-row" style="margin-top: 12px;">
+                    <textarea name="goal" placeholder="Chapter goal"></textarea>
+                    <textarea name="outline" placeholder="Outline (one per line)"></textarea>
+                </div>
+                <div class="form-row" style="margin-top: 12px;">
+                    <textarea name="notes" placeholder="Notes / constraints / narrative arc"></textarea>
+                    <textarea disabled placeholder="Tip: use this to reframe chapters for new trends."></textarea>
+                </div>
+                <div class="actions">
+                    <button type="submit">Save Brief</button>
+                </div>
+            </form>
+            {% if briefs %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Silo</th>
+                        <th>Title</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for brief in briefs %}
+                    <tr>
+                        <td>{{ brief.silo_number }}</td>
+                        <td>{{ brief.title }}</td>
+                        <td>{{ brief.updated_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            {% else %}
+            <p class="muted">Select a topic to edit briefs.</p>
+            {% endif %}
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+            <h2>Ghostwriter Swarm</h2>
+            {% if selected_topic %}
+            <p class="muted">Runs parallel chapter drafts from briefs + idea pool + notes.</p>
+            <form method="post" action="/dashboard/topics/{{ selected_topic.slug }}/swarm/run">
+                <input type="hidden" name="include_unassigned" value="true">
+                <div class="actions">
+                    <button type="submit">Run Swarm Draft</button>
+                </div>
+            </form>
+            {% if swarm_last %}
+            <div class="note" style="margin-top: 12px;">
+                <strong>Last swarm:</strong>
+                <span class="pill">Silo {{ swarm_last.silo }}</span>
+                <span class="pill">Words {{ swarm_last.word_count }}</span>
+                <span class="pill">Score {{ swarm_last.review_score }}</span>
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="muted">Select a topic to run the swarm.</p>
             {% endif %}
         </div>
 

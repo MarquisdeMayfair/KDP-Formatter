@@ -123,3 +123,35 @@ class SourceDoc(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     topic = relationship("Topic", back_populates="sources")
+
+
+class IdeaItem(Base):
+    __tablename__ = "idea_items"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
+    text = Column(Text, nullable=False)
+    status = Column(String(50), default="backlog")
+    silo_number = Column(Integer)
+    tags = Column(JSON, default=list)
+    source = Column(String(50), default="user")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    topic = relationship("Topic")
+
+
+class ChapterBrief(Base):
+    __tablename__ = "chapter_briefs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
+    silo_number = Column(Integer, nullable=False)
+    title = Column(String(255), nullable=False)
+    goal = Column(Text, default="")
+    outline = Column(JSON, default=list)
+    notes = Column(Text, default="")
+    status = Column(String(50), default="draft")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    topic = relationship("Topic")

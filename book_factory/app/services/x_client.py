@@ -114,3 +114,39 @@ def fetch_thread_text(conversation_id: str, username: str) -> list[str]:
     tweets = data.get("data") or []
     tweets.sort(key=lambda item: item.get("created_at", ""))
     return [item.get("text", "") for item in tweets if item.get("text")]
+
+
+def search_recent_tweets(query: str, max_results: int = 10) -> list[dict]:
+    """Search recent tweets by query and return text + id + author_id."""
+    global _last_call_ts
+    if _last_call_ts is not None:
+        elapsed = time.time() - _last_call_ts
+        delay = max(0.0, settings.x_min_seconds_between_calls - elapsed)
+        if delay > 0:
+            time.sleep(delay)
+    url = "https://api.x.com/2/tweets/search/recent"
+    params = {
+        "query": query,
+        "max_results": max(10, min(max_results, 100)),
+        "tweet.fields": "created_at,author_id",
+    }
+    resp = requests.get(url, headers=_bearer_headers(), params=params, timeout=20)
+    if resp.status_code == 429:
+        reset = resp.headers.get("x-rate-limit-reset")
+        if reset and reset.isdigit():
+            wait_for = max(0, int(reset) - int(time.time()) + 1)
+            time.sleep(wait_for)
+            resp = requests.get(url, headers=_bearer_headers(), params=params, timeout=20)
+    resp.raise_for_status()
+    _last_call_ts = time.time()
+    data = resp.json()
+    tweets = data.get("data") or []
+    results = []
+    for item in tweets[:max_results]:
+        results.append({
+            "id": item.get("id"),
+            "text": item.get("text", ""),
+            "author_id": item.get("author_id"),
+            "created_at": item.get("created_at"),
+        })
+    return results
