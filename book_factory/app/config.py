@@ -107,6 +107,9 @@ class Settings(BaseSettings):
     swarm_max_parallel: int = 3
     swarm_use_x: bool = True
     swarm_include_unassigned_ideas: bool = True
+    swarm_use_web: bool = True
+    swarm_web_sources_per_chapter: int = 2
+    swarm_web_max_words: int = 300
 
     class Config:
         env_file = ".env"

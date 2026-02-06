@@ -20,6 +20,8 @@ from app.services.openai_compat_client import OpenAICompatClient
 from app.services.storage import SILO_TITLES, silo_dir, topic_dir
 from app.services.author_notes import read_notes
 from app.services.x_client import search_recent_tweets
+from app.services.discovery import cse_search
+from app.services.ingestion import fetch_and_clean
 
 
 @dataclass
@@ -33,6 +35,7 @@ class ChapterContext:
     draft_notes: str
     author_notes: str
     x_notes: str
+    web_notes: str
 
 
 def swarm_draft_path(slug: str, silo_number: int) -> Path:
@@ -100,6 +103,32 @@ def _read_draft_notes(slug: str, silo_number: int) -> str:
     if not draft_path.exists():
         return ""
     return draft_path.read_text(encoding="utf-8", errors="ignore")
+
+
+async def _web_evidence(topic_name: str, chapter_title: str, outline: list[str]) -> str:
+    if not settings.swarm_use_web or not settings.google_cse_api_key:
+        return ""
+    query = f"{topic_name} {chapter_title}"
+    if outline:
+        query = f"{query} {outline[0]}"
+    urls = cse_search(
+        query,
+        date_restrict=settings.google_cse_date_restrict,
+        num=settings.swarm_web_sources_per_chapter,
+    )
+    if not urls:
+        return ""
+    snippets: list[str] = []
+    for url in urls[: settings.swarm_web_sources_per_chapter]:
+        try:
+            text = await fetch_and_clean(url)
+        except Exception:
+            continue
+        words = text.split()
+        snippet = " ".join(words[: settings.swarm_web_max_words])
+        if snippet:
+            snippets.append(f"URL: {url}\n{snippet}")
+    return "\n\n".join(snippets)
 
 
 async def _generate(provider: str, client: object, system_prompt: str, user_prompt: str, max_tokens: int) -> str:
@@ -222,6 +251,8 @@ async def _build_context(
         if tweets:
             x_notes = "\n".join(f"- {item['text']}" for item in tweets)
 
+    web_notes = await _web_evidence(topic_name, title, outline)
+
     return ChapterContext(
         silo_number=silo_number,
         title=title,
@@ -232,6 +263,7 @@ async def _build_context(
         draft_notes=draft_notes,
         author_notes=author_notes,
         x_notes=x_notes,
+        web_notes=web_notes,
     )
 
 
@@ -248,10 +280,12 @@ async def _research_memo(context: ChapterContext, topic_name: str) -> str:
         f"Chapter: {context.title}\n"
         f"Goal: {context.goal}\n"
         f"Outline: {context.outline}\n\n"
+        f"Brief notes:\n{context.notes}\n\n"
         "Ideas:\n" + "\n".join(f"- {idea}" for idea in context.ideas[:25]) + "\n\n"
         "Draft notes:\n" + context.draft_notes[:4000] + "\n\n"
         "Author notes:\n" + context.author_notes[:1500] + "\n\n"
-        "X notes:\n" + context.x_notes[:1500]
+        "X notes:\n" + context.x_notes[:1500] + "\n\n"
+        "Web evidence:\n" + context.web_notes[:4000]
     )
     return await _generate(provider, client, system_prompt, user_prompt, max_tokens=1200)
 
@@ -268,10 +302,12 @@ async def _write_chapter(context: ChapterContext, topic_name: str, voice_preset:
         f"Voice: {voice_preset}\n\n"
         f"Chapter goal: {context.goal}\n"
         f"Outline: {context.outline}\n\n"
+        f"Brief notes:\n{context.notes}\n\n"
         "Idea pool (scrum backlog):\n" + "\n".join(f"- {idea}" for idea in context.ideas[:30]) + "\n\n"
         "Author notes:\n" + context.author_notes[:2000] + "\n\n"
         "Draft notes (do not copy verbatim):\n" + context.draft_notes[:4000] + "\n\n"
         "X notes (signals only, paraphrase):\n" + context.x_notes[:1000] + "\n\n"
+        "Web evidence (paraphrase, cite by URL if useful):\n" + context.web_notes[:4000] + "\n\n"
         "Write the chapter in coherent narrative form. Use section headings if helpful."
     )
 
