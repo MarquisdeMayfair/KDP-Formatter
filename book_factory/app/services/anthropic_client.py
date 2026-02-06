@@ -33,6 +33,9 @@ class AnthropicClient:
         }
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(self.base_url, headers=headers, json=payload)
+            if response.status_code >= 400:
+                detail = response.text[:800]
+                raise ValueError(f"Anthropic API error {response.status_code}: {detail}")
             response.raise_for_status()
             data = response.json()
 
