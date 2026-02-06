@@ -1,8 +1,6 @@
 """OpenAI-compatible chat completions client (works for GPT/Grok-compatible endpoints)."""
 from __future__ import annotations
 
-from urllib.parse import urljoin
-
 import httpx
 
 
@@ -11,14 +9,17 @@ class OpenAICompatClient:
 
     def __init__(self, api_key: str, base_url: str, model: str, path: str = "/v1/chat/completions") -> None:
         self.api_key = api_key
-        self.base_url = base_url.rstrip("/") + "/"
+        self.base_url = base_url.rstrip("/")
         self.model = model
         self.path = path
 
     async def generate(self, system_prompt: str, user_prompt: str, max_tokens: int = 3000) -> str:
         if not self.api_key:
             raise ValueError("OpenAI-compatible API key is not configured.")
-        url = urljoin(self.base_url, self.path.lstrip("/"))
+        if self.path.startswith("/"):
+            url = self.base_url.rstrip("/") + self.path
+        else:
+            url = self.base_url.rstrip("/") + "/" + self.path
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "content-type": "application/json",
