@@ -36,6 +36,8 @@ class ChapterContext:
     author_notes: str
     x_notes: str
     web_notes: str
+    x_posts: list[dict]
+    web_sources: list[dict]
 
 
 def swarm_draft_path(slug: str, silo_number: int) -> Path:
@@ -44,6 +46,10 @@ def swarm_draft_path(slug: str, silo_number: int) -> Path:
 
 def swarm_review_path(slug: str, silo_number: int) -> Path:
     return silo_dir(slug, silo_number) / "swarm_review.json"
+
+
+def swarm_sources_path(slug: str, silo_number: int) -> Path:
+    return silo_dir(slug, silo_number) / "swarm_sources.json"
 
 
 def _select_writer_provider() -> tuple[str, object]:
@@ -119,6 +125,7 @@ async def _web_evidence(topic_name: str, chapter_title: str, outline: list[str])
     if not urls:
         return ""
     snippets: list[str] = []
+    sources: list[dict] = []
     for url in urls[: settings.swarm_web_sources_per_chapter]:
         try:
             text = await fetch_and_clean(url)
@@ -128,7 +135,8 @@ async def _web_evidence(topic_name: str, chapter_title: str, outline: list[str])
         snippet = " ".join(words[: settings.swarm_web_max_words])
         if snippet:
             snippets.append(f"URL: {url}\n{snippet}")
-    return "\n\n".join(snippets)
+            sources.append({"url": url, "snippet": snippet})
+    return "\n\n".join(snippets), sources
 
 
 async def _generate(provider: str, client: object, system_prompt: str, user_prompt: str, max_tokens: int) -> str:
@@ -245,13 +253,15 @@ async def _build_context(
     author_notes = read_notes(slug, silo_number)
 
     x_notes = ""
+    x_posts: list[dict] = []
     if settings.swarm_use_x and settings.x_bearer_token:
         query = f"{topic_name} {title}"
         tweets = await asyncio.to_thread(search_recent_tweets, query, 6)
         if tweets:
             x_notes = "\n".join(f"- {item['text']}" for item in tweets)
+            x_posts = tweets
 
-    web_notes = await _web_evidence(topic_name, title, outline)
+    web_notes, web_sources = await _web_evidence(topic_name, title, outline)
 
     return ChapterContext(
         silo_number=silo_number,
@@ -264,6 +274,8 @@ async def _build_context(
         author_notes=author_notes,
         x_notes=x_notes,
         web_notes=web_notes,
+        x_posts=x_posts,
+        web_sources=web_sources,
     )
 
 
@@ -349,6 +361,26 @@ async def run_swarm(
     async def _run_silo(silo_number: int) -> dict:
         async with semaphore:
             start = time.monotonic()
+            writer_provider = settings.swarm_writer_provider
+            research_provider = settings.swarm_research_provider
+            writer_model = (
+                settings.anthropic_model
+                if writer_provider == "anthropic"
+                else settings.openai_model
+                if writer_provider == "openai"
+                else settings.grok_model
+                if writer_provider == "grok"
+                else settings.ollama_model
+            )
+            research_model = (
+                settings.anthropic_model
+                if research_provider == "anthropic"
+                else settings.openai_model
+                if research_provider == "openai"
+                else settings.grok_model
+                if research_provider == "grok"
+                else settings.ollama_model
+            )
             context = await _build_context(
                 topic_id,
                 topic_name,
@@ -367,6 +399,21 @@ async def run_swarm(
             review_path = swarm_review_path(slug, silo_number)
             review_path.write_text(json.dumps(review, indent=2), encoding="utf-8")
 
+            sources_payload = {
+                "timestamp": datetime.utcnow().isoformat(),
+                "silo": silo_number,
+                "title": context.title,
+                "x_posts": context.x_posts,
+                "web_sources": context.web_sources,
+                "research_memo": research_memo,
+                "writer_provider": writer_provider,
+                "writer_model": writer_model,
+                "research_provider": research_provider,
+                "research_model": research_model,
+            }
+            sources_path = swarm_sources_path(slug, silo_number)
+            sources_path.write_text(json.dumps(sources_payload, indent=2), encoding="utf-8")
+
             duration = round(time.monotonic() - start, 2)
             record = {
                 "timestamp": datetime.utcnow().isoformat(),
@@ -375,6 +422,12 @@ async def run_swarm(
                 "duration_seconds": duration,
                 "word_count": len(chapter_text.split()),
                 "review_score": review.get("score", 0),
+                "x_posts": len(context.x_posts),
+                "web_sources": len(context.web_sources),
+                "writer_provider": writer_provider,
+                "writer_model": writer_model,
+                "research_provider": research_provider,
+                "research_model": research_model,
             }
             _log_swarm(slug, record)
             return record
