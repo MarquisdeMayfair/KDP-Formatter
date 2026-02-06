@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -52,6 +53,28 @@ def swarm_review_path(slug: str, silo_number: int) -> Path:
 
 def swarm_sources_path(slug: str, silo_number: int) -> Path:
     return silo_dir(slug, silo_number) / "swarm_sources.json"
+
+
+def _strip_evidence_gaps(text: str) -> str:
+    if not settings.swarm_strip_evidence_gaps:
+        return text
+    lines = text.splitlines()
+    cleaned: list[str] = []
+    skipping = False
+    for line in lines:
+        lower = line.strip().lower()
+        if lower.startswith("**evidence") or lower.startswith("evidence gap"):
+            skipping = True
+            continue
+        if skipping:
+            if line.startswith("#"):
+                skipping = False
+                cleaned.append(line)
+            else:
+                continue
+        else:
+            cleaned.append(line)
+    return "\n".join(cleaned).strip() + "\n"
 
 
 def _select_writer_provider() -> tuple[str, object]:
@@ -311,8 +334,15 @@ async def _write_chapter(context: ChapterContext, topic_name: str, voice_preset:
     provider, client = _select_writer_provider()
     system_prompt = (
         "You are a senior ghostwriter. Write original prose with a clear narrative arc. "
-        "Do not copy phrases from sources. If evidence is weak, flag gaps."
+        "Do not copy phrases from sources."
     )
+    if settings.swarm_best_effort:
+        system_prompt += (
+            " Work in best-effort mode: do not include evidence-gap disclaimers. "
+            "If uncertain, add a short 'Needs verification' bullet list at the end."
+        )
+    else:
+        system_prompt += " If evidence is weak, flag gaps."
     user_prompt = (
         f"Topic: {topic_name}\n"
         f"Chapter: {context.title}\n"
@@ -329,7 +359,10 @@ async def _write_chapter(context: ChapterContext, topic_name: str, voice_preset:
         "Write the chapter in coherent narrative form. Use section headings if helpful."
     )
 
-    return await _generate(provider, client, system_prompt, user_prompt, max_tokens=3200)
+    text = await _generate(provider, client, system_prompt, user_prompt, max_tokens=3200)
+    if settings.swarm_best_effort:
+        text = _strip_evidence_gaps(text)
+    return text
 
 
 async def _review_chapter(context: ChapterContext, topic_name: str, chapter_text: str) -> dict:
@@ -410,6 +443,12 @@ async def run_swarm(
                 context.notes = (context.notes + "\n\n" + research_memo).strip()
             chapter_text = await _write_chapter(context, topic_name, voice_preset)
             draft_path = swarm_draft_path(slug, silo_number)
+            if draft_path.exists():
+                backup_path = draft_path.with_name("swarm_draft.prev.md")
+                try:
+                    shutil.copyfile(draft_path, backup_path)
+                except OSError:
+                    pass
             draft_path.write_text(chapter_text.strip(), encoding="utf-8")
 
             review = await _review_chapter(context, topic_name, chapter_text)

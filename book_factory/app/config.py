@@ -113,6 +113,8 @@ class Settings(BaseSettings):
     swarm_use_x_trends: bool = True
     swarm_x_trends_max_results: int = 30
     swarm_x_trends_top_authors: int = 8
+    swarm_best_effort: bool = True
+    swarm_strip_evidence_gaps: bool = True
 
     class Config:
         env_file = [
