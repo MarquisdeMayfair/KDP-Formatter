@@ -117,7 +117,7 @@ def fetch_thread_text(conversation_id: str, username: str) -> list[str]:
 
 
 def search_recent_tweets(query: str, max_results: int = 10) -> list[dict]:
-    """Search recent tweets by query and return text + id + author_id."""
+    """Search recent tweets by query and return text + metrics + author info."""
     global _last_call_ts
     if _last_call_ts is not None:
         elapsed = time.time() - _last_call_ts
@@ -128,7 +128,9 @@ def search_recent_tweets(query: str, max_results: int = 10) -> list[dict]:
     params = {
         "query": query,
         "max_results": max(10, min(max_results, 100)),
-        "tweet.fields": "created_at,author_id",
+        "tweet.fields": "created_at,author_id,public_metrics,entities",
+        "expansions": "author_id",
+        "user.fields": "username,name",
     }
     resp = requests.get(url, headers=_bearer_headers(), params=params, timeout=20)
     if resp.status_code == 429:
@@ -141,12 +143,25 @@ def search_recent_tweets(query: str, max_results: int = 10) -> list[dict]:
     _last_call_ts = time.time()
     data = resp.json()
     tweets = data.get("data") or []
+    users = {user.get("id"): user for user in (data.get("includes") or {}).get("users", []) or []}
     results = []
     for item in tweets[:max_results]:
+        entities = item.get("entities") or {}
+        urls = []
+        for url_obj in entities.get("urls", []) or []:
+            expanded = url_obj.get("expanded_url")
+            if expanded:
+                urls.append(expanded)
+        author_id = item.get("author_id")
+        user = users.get(author_id, {})
         results.append({
             "id": item.get("id"),
             "text": item.get("text", ""),
-            "author_id": item.get("author_id"),
+            "author_id": author_id,
             "created_at": item.get("created_at"),
+            "public_metrics": item.get("public_metrics") or {},
+            "username": user.get("username"),
+            "name": user.get("name"),
+            "urls": urls,
         })
     return results

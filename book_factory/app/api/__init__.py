@@ -14,6 +14,7 @@ from app.api import (
     ideas,
     briefs,
     swarm,
+    x_trends,
 )
 
 __all__ = [
@@ -31,4 +32,5 @@ __all__ = [
     "ideas",
     "briefs",
     "swarm",
+    "x_trends",
 ]

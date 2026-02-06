@@ -24,6 +24,7 @@ from app.api import (
     ideas,
     briefs,
     swarm,
+    x_trends,
 )
 from app.config import settings
 from app.database import init_db
@@ -675,3 +676,4 @@ app.include_router(discovery.router, prefix="/api/v1")
 app.include_router(ideas.router, prefix="/api/v1")
 app.include_router(briefs.router, prefix="/api/v1")
 app.include_router(swarm.router, prefix="/api/v1")
+app.include_router(x_trends.router, prefix="/api/v1")

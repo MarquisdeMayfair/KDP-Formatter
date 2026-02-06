@@ -110,6 +110,9 @@ class Settings(BaseSettings):
     swarm_use_web: bool = True
     swarm_web_sources_per_chapter: int = 2
     swarm_web_max_words: int = 300
+    swarm_use_x_trends: bool = True
+    swarm_x_trends_max_results: int = 30
+    swarm_x_trends_top_authors: int = 8
 
     class Config:
         env_file = [

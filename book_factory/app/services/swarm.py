@@ -20,6 +20,7 @@ from app.services.openai_compat_client import OpenAICompatClient
 from app.services.storage import SILO_TITLES, silo_dir, topic_dir
 from app.services.author_notes import read_notes
 from app.services.x_client import search_recent_tweets
+from app.services.x_trends import build_trend_digest
 from app.services.discovery import cse_search
 from app.services.ingestion import fetch_and_clean
 
@@ -38,6 +39,7 @@ class ChapterContext:
     web_notes: str
     x_posts: list[dict]
     web_sources: list[dict]
+    x_trends: dict
 
 
 def swarm_draft_path(slug: str, silo_number: int) -> Path:
@@ -213,6 +215,7 @@ async def _build_context(
     slug: str,
     silo_number: int,
     include_unassigned: bool,
+    x_trend_digest: dict | None = None,
 ) -> ChapterContext:
     async with AsyncSessionLocal() as session:
         brief_result = await session.execute(
@@ -276,6 +279,7 @@ async def _build_context(
         web_notes=web_notes,
         x_posts=x_posts,
         web_sources=web_sources,
+        x_trends=x_trend_digest or {},
     )
 
 
@@ -297,6 +301,7 @@ async def _research_memo(context: ChapterContext, topic_name: str) -> str:
         "Draft notes:\n" + context.draft_notes[:4000] + "\n\n"
         "Author notes:\n" + context.author_notes[:1500] + "\n\n"
         "X notes:\n" + context.x_notes[:1500] + "\n\n"
+        "X trend digest:\n" + json.dumps(context.x_trends, indent=2)[:2000] + "\n\n"
         "Web evidence:\n" + context.web_notes[:4000]
     )
     return await _generate(provider, client, system_prompt, user_prompt, max_tokens=1200)
@@ -319,6 +324,7 @@ async def _write_chapter(context: ChapterContext, topic_name: str, voice_preset:
         "Author notes:\n" + context.author_notes[:2000] + "\n\n"
         "Draft notes (do not copy verbatim):\n" + context.draft_notes[:4000] + "\n\n"
         "X notes (signals only, paraphrase):\n" + context.x_notes[:1000] + "\n\n"
+        "X trend digest:\n" + json.dumps(context.x_trends, indent=2)[:2000] + "\n\n"
         "Web evidence (paraphrase, cite by URL if useful):\n" + context.web_notes[:4000] + "\n\n"
         "Write the chapter in coherent narrative form. Use section headings if helpful."
     )
@@ -357,6 +363,16 @@ async def run_swarm(
     selected = list(silos) if silos else list(SILO_TITLES.keys())
 
     semaphore = asyncio.Semaphore(settings.swarm_max_parallel)
+    x_trend_digest: dict | None = None
+    if settings.swarm_use_x_trends and settings.swarm_use_x and settings.x_bearer_token:
+        x_trend_digest = await asyncio.to_thread(
+            build_trend_digest,
+            topic_name,
+            [],
+            settings.swarm_x_trends_max_results,
+            settings.swarm_x_trends_top_authors,
+            10,
+        )
 
     async def _run_silo(silo_number: int) -> dict:
         async with semaphore:
@@ -387,6 +403,7 @@ async def run_swarm(
                 slug,
                 silo_number,
                 include_unassigned_ideas,
+                x_trend_digest,
             )
             research_memo = await _research_memo(context, topic_name)
             if research_memo:
@@ -404,6 +421,7 @@ async def run_swarm(
                 "silo": silo_number,
                 "title": context.title,
                 "x_posts": context.x_posts,
+                "x_trends": context.x_trends,
                 "web_sources": context.web_sources,
                 "research_memo": research_memo,
                 "writer_provider": writer_provider,
