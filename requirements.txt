@@ -22,6 +22,7 @@ pdfminer.six==20231228     # REQUIRED: PDF text extraction for PDF file uploads
 Pillow==10.2.0             # OPTIONAL: Image processing
 python-docx==1.1.0         # REQUIRED: DOCX file processing
 markdown==3.5.2            # REQUIRED: Markdown file processing
+PyYAML==6.0.2              # REQUIRED: DirectorHelp Markdown metadata
 
 # PDF generation
 reportlab==4.4.0           # REQUIRED: Primary PDF renderer (KDP-compatible, simple output)
