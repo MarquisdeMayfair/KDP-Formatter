@@ -1,0 +1,22 @@
+{
+  "name": "marquis-erotic-map",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/build-regional.mjs && node scripts/build-data.mjs && node scripts/build-taboo.mjs && node scripts/ingest-research.mjs && vite build && node scripts/prerender.mjs",
+    "preview": "vite preview",
+    "research": "node scripts/ingest-research.mjs && node scripts/build-manuscript.mjs",
+    "manuscript": "node scripts/build-manuscript.mjs"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.5",
+    "vite": "^8.2.1"
+  }
+}

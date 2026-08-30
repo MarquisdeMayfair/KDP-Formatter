@@ -1,0 +1,26 @@
+{
+  "_readme": [
+    "Hand-maintained factual corrections, applied over locations.json by src/data/enrich.js.",
+    "These live here rather than in locations.json because build-data.mjs REGENERATES that file",
+    "from the research markdown — direct edits there are lost on the next build.",
+    "Source: the FACT NOTES / 'data note for client' lines in research/book/batches/*.md.",
+    "Each key is a location id; each value is a shallow patch. Add the batch it came from."
+  ],
+
+  "wemyss-castle-mary-darnley": {
+    "_from": "batch-01, topic 3",
+    "coordinate_confidence": 5,
+    "coordinate_note": "Confirmed against Historic Environment Scotland listing LB16709 (Category A) and Canmore ID 53957. Private residence; walled gardens open on a limited basis only."
+  },
+
+  "hampton-court-palace": {
+    "_from": "batch-01, topic 1",
+    "county": "Surrey",
+    "coordinate_note": "Major palace, precisely mapped. Historically in Middlesex; Surrey since the 1965 boundary changes."
+  },
+
+  "gateways-club": {
+    "_from": "batch-11, topic 54; connective-matter evidence audit, 25 August 2026",
+    "hook": "Behind a green door at 239 King's Road, the Gateways became what English Heritage calls London's best-known and longest-lived lesbian social venue. It introduced a women-only policy in 1967, closed in September 1985, and received an English Heritage blue plaque on 2 July 2025."
+  }
+}

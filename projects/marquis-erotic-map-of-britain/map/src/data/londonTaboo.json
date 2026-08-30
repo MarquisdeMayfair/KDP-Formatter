@@ -1,0 +1,798 @@
+[
+ {
+  "id": "ldn-taboo-01",
+  "name": "Shepherd Market, Mayfair",
+  "site": "Shepherd Market, Mayfair, London W1J",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5064,
+  "lng": -0.147,
+  "coordinate_confidence": 4,
+  "coordinate_note": "Centre of the market precinct; anchored to Historic England listing for 25-27 Shepherd Market (51.5064N).",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "mayfair",
+   "georgian",
+   "victorian",
+   "20th_century",
+   "literary",
+   "walk_ups"
+  ],
+  "nature": "both",
+  "people": [
+   "Edward Shepherd",
+   "Anthony Powell",
+   "Michael Arlen",
+   "Olivia Manning",
+   "Jeffrey Archer",
+   "Monica Coghlan",
+   "Messina brothers"
+  ],
+  "date": "1735-present",
+  "hook": "Mayfair's prettiest square was built on a debauched fair and spent 250 years as London's most genteel red-light district.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "Georgian courtesans and Victorian walk-ups",
+   "Powell and Arlen's literary 1920s",
+   "the 1987 Archer-Coghlan scandal"
+  ],
+  "sources": [
+   {
+    "url": "https://en.wikipedia.org/wiki/Shepherd_Market",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://alondoninheritance.com/londonpubs/shepherd-market-a-village-in-piccadilly/",
+    "publisher": "A London Inheritance",
+    "paywalled": false
+   },
+   {
+    "url": "https://footprintsoflondon.com/live/2014/10/literary-london-shepherd-market/",
+    "publisher": "Footprints of London",
+    "paywalled": false
+   },
+   {
+    "url": "https://britishlistedbuildings.co.uk/101236200-25-and-27-shepherd-market-w1-west-end-ward",
+    "publisher": "British Listed Buildings / Historic England",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "NOT FOUND (no verified free-licence file confirmed)"
+  },
+  "slug": "shepherd-market",
+  "taboo_category": "high-class prostitution enclave",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-02",
+  "name": "Attributed site of Theresa Berkley's establishment",
+  "site": "Site of 28 Charlotte Street, now 84-94 Hallam Street (Weymouth House), Marylebone, London W1W",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5208,
+  "lng": -0.1452,
+  "coordinate_confidence": 2,
+  "coordinate_note": "Estimated: anchored to Hallam Street centroid (51.5213N, 0.1439W); 5th decimal is an estimate; original building demolished.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "marylebone",
+   "regency",
+   "bdsm_history",
+   "erotica_source",
+   "flagellation"
+  ],
+  "nature": "both",
+  "people": [
+   "Theresa Berkley (attributed; standard account d.1836)",
+   "Henry Spencer Ashbee (Pisanus Fraxi)",
+   "Mary Wilson",
+   "George Cannon"
+  ],
+  "date": "c.1828-1836",
+  "hook": "The supposed address of a Regency 'governess' credited with inventing a flogging machine — a biography resting largely on Victorian erotica rather than independent records.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "the invention of the 'Berkley Horse' c.1828",
+   "the disputed Society of Arts bequest",
+   "why the evidence is erotica, not documentary"
+  ],
+  "sources": [
+   {
+    "url": "https://en.wikipedia.org/wiki/Theresa_Berkley",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/Berkley_Horse",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/Hallam_Street",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/Henry_Spencer_Ashbee",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "NOT FOUND (the 'Berkley Horse' print survives only in Ashbee's erotica bibliography; no verified free-licence file)"
+  },
+  "slug": "theresa-berkley-hallam-street",
+  "taboo_category": "flagellation brothel (documented via erotica sources)",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": true
+ },
+ {
+  "id": "ldn-taboo-03",
+  "name": "The White House, 21 Soho Square",
+  "site": "Manor House, 21 Soho Square, London W1D",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5159,
+  "lng": -0.1313,
+  "coordinate_confidence": 4,
+  "coordinate_note": "Manor House, NE side of Soho Square; extant Grade II listed building (rebuilt 1838).",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "soho",
+   "georgian",
+   "victorian",
+   "mechanical_rooms",
+   "erotica_source"
+  ],
+  "nature": "both",
+  "people": [
+   "Thomas Hooper/Hopper",
+   "Henry Mayhew"
+  ],
+  "date": "c.1778-1801 (brothel era)",
+  "hook": "A Soho Square hotel with a Gold Room, a Skeleton Room and mechanical contrivances - half documented, half penny-dreadful legend.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "Mayhew's 'notorious place of ill-fame'",
+   "the mechanised skeleton and mirrored chambers",
+   "what the Survey of London confirms vs what it doesn't"
+  ],
+  "sources": [
+   {
+    "url": "https://www.british-history.ac.uk/survey-london/vols33-4/pp72-73",
+    "publisher": "Survey of London / British History Online",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/Manor_House,_21_Soho_Square",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://www.british-history.ac.uk/old-new-london/vol3/pp184-196",
+    "publisher": "Old and New London / British History Online",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "NOT FOUND (no verified free-licence file confirmed)"
+  },
+  "slug": "white-house-soho-square",
+  "taboo_category": "luxury brothel",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-04",
+  "name": "Covent Garden bagnios & Harris's List",
+  "site": "Covent Garden Piazza (site of the Shakespear's Head Tavern, NE corner), London WC2E",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5123,
+  "lng": -0.1225,
+  "coordinate_confidence": 3,
+  "coordinate_note": "Anchored to the Piazza; exact Shakespear's Head footprint approximate.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "covent_garden",
+   "georgian",
+   "harris_list",
+   "bagnios",
+   "courtesans"
+  ],
+  "nature": "factual",
+  "people": [
+   "Jack Harris (John Harrison)",
+   "Samuel Derrick",
+   "Charlotte Hayes",
+   "Hallie Rubenhold (historian)"
+  ],
+  "date": "1757-1795 (Harris's List run)",
+  "hook": "London's answer to a reviews site: an annual pocketbook rating the capital's prostitutes by looks, price and 'speciality'.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "Harris's List and its 8,000 copies a year",
+   "the bagnios (Turkish-bath brothels)",
+   "Charlotte Hayes's King's Place 'nunnery'"
+  ],
+  "sources": [
+   {
+    "url": "https://en.wikipedia.org/wiki/Harris%27s_List_of_Covent_Garden_Ladies",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://publicdomainreview.org/collection/harris-list-of-covent-garden-ladies/",
+    "publisher": "The Public Domain Review",
+    "paywalled": false
+   },
+   {
+    "url": "https://www.romanticlondon.org/harris-list-intro/",
+    "publisher": "Romantic London",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/Charlotte_Hayes",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "PUBLIC DOMAIN - Harris's List 1773 title page on Wikimedia Commons (pre-1900, public domain); exact file to be confirmed before use."
+  },
+  "slug": "covent-garden-bagnios",
+  "taboo_category": "prostitution district / directory publishing",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-05",
+  "name": "Stringfellows & the modern club scene",
+  "site": "Stringfellows, 16-19 Upper St Martin's Lane, Covent Garden, London WC2H",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5128,
+  "lng": -0.1276,
+  "coordinate_confidence": 5,
+  "coordinate_note": "Current operating venue at a confirmed street address.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "covent_garden",
+   "soho",
+   "20th_century",
+   "21st_century",
+   "striptease",
+   "licensing"
+  ],
+  "nature": "factual",
+  "people": [
+   "Peter Stringfellow",
+   "Paul Raymond",
+   "Laura Henderson",
+   "Vivian Van Damm"
+  ],
+  "date": "1980-present (Stringfellows); wider scene 1932-present",
+  "hook": "From the Windmill's 'We Never Closed' to Stringfellow's Cabaret of Angels - how London monetised nudity and fought the licence battles.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "the Cabaret of Angels and the lap-dancing wars",
+   "Paul Raymond's Soho empire",
+   "the Windmill's motionless nudes"
+  ],
+  "sources": [
+   {
+    "url": "https://en.wikipedia.org/wiki/Peter_Stringfellow",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/Raymond_Revuebar",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://londonist.com/2013/04/a-tour-of-paul-raymonds-soho",
+    "publisher": "Londonist",
+    "paywalled": false
+   },
+   {
+    "url": "https://feeds.bbci.co.uk/news/uk-44394076",
+    "publisher": "BBC News",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "NOT FOUND (no verified free-licence file confirmed)"
+  },
+  "slug": "stringfellows-club-scene",
+  "taboo_category": "nightlife / striptease / lap-dancing",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-06",
+  "name": "Holywell Street ('Booksellers' Row'), the Strand",
+  "site": "Site of Holywell Street, now under the Aldwych/Strand widening, near Australia House, London WC2B",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5128,
+  "lng": -0.1172,
+  "coordinate_confidence": 3,
+  "coordinate_note": "Street demolished 1900-1903; anchored to its former line parallel to the Strand near St Mary-le-Strand.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "strand",
+   "victorian",
+   "obscenity",
+   "publishing",
+   "lost_london"
+  ],
+  "nature": "factual",
+  "people": [
+   "William Dugdale",
+   "Henry Spencer Ashbee",
+   "John Camden Hotten"
+  ],
+  "date": "c.1820s-1903",
+  "hook": "'The vilest street in the civilised world' - the demolished lane where Victorian London bought its dirty books.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "William Dugdale, the 'Napoleon' of the smut trade",
+   "the 1857 Obscene Publications Act",
+   "wiped off the map for the Aldwych"
+  ],
+  "sources": [
+   {
+    "url": "https://en.wikipedia.org/wiki/Holywell_Street,_London",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://publicdomainreview.org/essay/the-secret-history-of-holywell-street-home-to-victorian-london-s-dirty-book-trade/",
+    "publisher": "The Public Domain Review",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/William_Dugdale_(publisher)",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://londonist.com/2016/06/how-london-s-victorians-bought-their-porn",
+    "publisher": "Londonist",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "PUBLIC DOMAIN - pre-1900 engravings of Holywell Street on Wikimedia Commons; exact file/licence to be confirmed before use."
+  },
+  "slug": "holywell-street",
+  "taboo_category": "pornography publishing centre",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-07",
+  "name": "The Cleveland Street scandal (male brothel, 1889)",
+  "site": "19 Cleveland Street, Fitzrovia, London W1T",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5207,
+  "lng": -0.1376,
+  "coordinate_confidence": 4,
+  "coordinate_note": "Cleveland Street; No.19 site anchored to the street. Framing: documented scandal, exploitation and reform history.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "fitzrovia",
+   "victorian",
+   "lgbtq_history",
+   "scandal",
+   "reform",
+   "labouchere_amendment"
+  ],
+  "nature": "factual",
+  "people": [
+   "Charles Hammond",
+   "Lord Arthur Somerset",
+   "Ernest Parke",
+   "Frederick Abberline",
+   "Henry Labouchere"
+  ],
+  "date": "1889-1890",
+  "hook": "A Post Office theft inquiry uncovered a male brothel that reached the aristocracy - and a cover-up that let the powerful escape.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "the telegraph-messenger exploitation, stated plainly",
+   "the establishment cover-up",
+   "the road from the 1885 Act to Oscar Wilde"
+  ],
+  "sources": [
+   {
+    "url": "https://en.wikipedia.org/wiki/Cleveland_Street_scandal",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://rictornorton.co.uk/eighteen/1889clev.htm",
+    "publisher": "Rictor Norton",
+    "paywalled": false
+   },
+   {
+    "url": "https://notchesblog.com/2014/12/02/uncovering-cleveland-street-sexuality-surveillance-and-late-victorian-scandal/",
+    "publisher": "NOTCHES (Katie Hindmarch-Watson)",
+    "paywalled": false
+   },
+   {
+    "url": "https://www.layersoflondon.org/map/records/cleveland-street-scandal",
+    "publisher": "Layers of London",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "NOT FOUND (no verified free-licence file confirmed)"
+  },
+  "slug": "cleveland-street-scandal",
+  "taboo_category": "LGBTQ+ history / scandal & reform",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-08",
+  "name": "The Cave of the Golden Calf, Heddon Street",
+  "site": "Basement, 9 Heddon Street, off Regent Street, London W1B",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.511,
+  "lng": -0.1405,
+  "coordinate_confidence": 4,
+  "coordinate_note": "Heddon Street cul-de-sac; club occupied basements at 3-9 Heddon Street.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "mayfair",
+   "edwardian",
+   "avant_garde",
+   "lgbtq_history",
+   "nightlife"
+  ],
+  "nature": "factual",
+  "people": [
+   "Frida Strindberg",
+   "Spencer Gore",
+   "Wyndham Lewis",
+   "Jacob Epstein",
+   "Eric Gill"
+  ],
+  "date": "1912-1914",
+  "hook": "London's first modern nightclub: a basement of Vorticist murals, ragtime, champagne till dawn and a phallic golden calf.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "Madame Strindberg, 'the walking hell-bitch of the Western World'",
+   "the avant-garde decor by Epstein, Gill and Lewis",
+   "an early tolerant queer space"
+  ],
+  "sources": [
+   {
+    "url": "https://en.wikipedia.org/wiki/The_Cave_of_the_Golden_Calf",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://www.tate.org.uk/art/research-publications/camden-town-group/spencer-gore-study-for-a-mural-decoration-for-the-cave-of-the-golden-calf-r1139297",
+    "publisher": "Tate",
+    "paywalled": false
+   },
+   {
+    "url": "https://historicengland.org.uk/research/inclusive-heritage/lgbtq-heritage-project/meeting-and-socialising/bohemian-london/",
+    "publisher": "Historic England",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "NOT VERIFIED (Museum of London holds the club's programme/menu; no confirmed free-licence file)"
+  },
+  "slug": "cave-of-the-golden-calf",
+  "taboo_category": "decadent nightclub / cabaret",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-09",
+  "name": "The Bankside stews & Crossbones Graveyard",
+  "site": "Crossbones Graveyard, Redcross Way, Southwark, London SE1 (Liberty of the Clink)",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5028,
+  "lng": -0.0924,
+  "coordinate_confidence": 4,
+  "coordinate_note": "Crossbones Graveyard, Redcross Way; the Liberty of the Clink covered the wider Bankside.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "southwark",
+   "medieval",
+   "winchester_geese",
+   "reform",
+   "shrine",
+   "surviving_site"
+  ],
+  "nature": "both",
+  "people": [
+   "Bishop Henry of Blois",
+   "Thomas Becket",
+   "John Stow",
+   "John Constable"
+  ],
+  "date": "1161-1546 (licensed stews); graveyard to 1853; shrine 1996-present",
+  "hook": "For 500 years the Bishop of Winchester licensed Bankside's brothels - and the 'Winchester Geese' who worked them lie in an unconsecrated graveyard still hung with ribbons.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "the 1161 ordinance and the church-licensed 'stews'",
+   "the 'Winchester Geese'",
+   "the Crossbones shrine that survives today"
+  ],
+  "sources": [
+   {
+    "url": "https://en.wikipedia.org/wiki/Cross_Bones",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://crossbones.org.uk/history/",
+    "publisher": "Crossbones / BOST",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/Liberty_of_the_Clink",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://www.smithsonianmag.com/history/london-graveyard-s-become-memorial-citys-seedier-past-180953104/",
+    "publisher": "Smithsonian Magazine",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "NOT FOUND (Crossbones gate photos exist but a confirmed free-licence file is not verified)"
+  },
+  "slug": "bankside-stews-crossbones",
+  "taboo_category": "medieval licensed brothels / burial ground",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-10",
+  "name": "Hampstead Heath - West Heath",
+  "site": "West Heath, Hampstead Heath (near former Jack Straw's Castle, North End Way), London NW3",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5623,
+  "lng": -0.1817,
+  "coordinate_confidence": 3,
+  "coordinate_note": "West Heath cruising area SW corner of the Heath, behind former Jack Straw's Castle; broad area, single point approximate.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "hampstead",
+   "camden",
+   "lgbtq_history",
+   "20th_century",
+   "21st_century",
+   "living_site"
+  ],
+  "nature": "factual",
+  "people": [
+   "George Michael",
+   "Rictor Norton (historian)"
+  ],
+  "date": "19th century-present",
+  "hook": "One of Europe's most storied gay cruising grounds - a wooded corner of North London woven into a century of queer heritage and 2025's 'Sodomites' Walk'.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "Historic England's recognition of the Heath as a place for sex",
+   "the 2025 anti-cruising posters and the Sodomites' Walk",
+   "a rare 'living' taboo site"
+  ],
+  "sources": [
+   {
+    "url": "https://historicengland.org.uk/research/inclusive-heritage/lgbtq-heritage-project/meeting-and-socialising/places-for-sex/",
+    "publisher": "Historic England",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/Gay_cruising_in_England_and_Wales",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   },
+   {
+    "url": "https://www.the-londoner.co.uk/cruise-control-the-battle-for-hampstead-heath/",
+    "publisher": "The Londoner",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "NOT FOUND (no verified free-licence file confirmed)"
+  },
+  "slug": "hampstead-west-heath",
+  "taboo_category": "LGBTQ+ cruising ground / heritage",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-05a",
+  "name": "The Windmill Theatre / Rhino at the Windmill",
+  "site": "17-19 Great Windmill Street, Soho, London W1D",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5128,
+  "lng": -0.1345,
+  "coordinate_confidence": 4,
+  "coordinate_note": "Confirmed current venue address; coordinate anchored to 17-19 Great Windmill Street.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "soho",
+   "20th_century",
+   "21st_century",
+   "striptease",
+   "licensing",
+   "theatre"
+  ],
+  "nature": "factual",
+  "people": [
+   "Laura Henderson",
+   "Vivian Van Damm",
+   "Paul Raymond"
+  ],
+  "date": "1931-present",
+  "hook": "The home of the Windmill's motionless nude tableaux, reopened in 2026 as Rhino at the Windmill.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "the Lord Chamberlain's motionless-nude rule",
+   "the qualified 'We Never Closed' boast",
+   "the 2026 reopening"
+  ],
+  "sources": [
+   {
+    "url": "https://www.rhinowindmill.com/",
+    "publisher": "Rhino at the Windmill",
+    "paywalled": false
+   },
+   {
+    "url": "https://westminster.moderngov.co.uk/mgAi.aspx?ID=23735",
+    "publisher": "Westminster City Council",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "Current exterior image rights to be cleared before publication."
+  },
+  "slug": "windmill-theatre-rhino",
+  "taboo_category": "nightlife / striptease / theatre censorship",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ },
+ {
+  "id": "ldn-taboo-05b",
+  "name": "Raymond Revuebar and the Walker's Court clubs",
+  "site": "Walker's Court, Soho, London W1F",
+  "town": "London",
+  "county": "Greater London",
+  "nation": "England",
+  "lat": 51.5133,
+  "lng": -0.1334,
+  "coordinate_confidence": 4,
+  "coordinate_note": "Anchored to Walker's Court, the Revuebar's historic street and the current licensed premises at 1-4 Walker's Court.",
+  "primary_category": "London Taboo",
+  "secondary_tags": [
+   "soho",
+   "20th_century",
+   "21st_century",
+   "striptease",
+   "licensing",
+   "private_club"
+  ],
+  "nature": "factual",
+  "people": [
+   "Paul Raymond"
+  ],
+  "date": "1958-present",
+  "hook": "Paul Raymond's private-club loophole let performers move; local licensing still governs the street today.",
+  "hot_spot": true,
+  "hot_spot_stories": [
+   "the Raymond Revuebar private-club loophole",
+   "the World Centre of Erotic Entertainment",
+   "the 2025 Penthouse Club licence"
+  ],
+  "sources": [
+   {
+    "url": "https://westminster.moderngov.co.uk/mgAi.aspx?ID=21667",
+    "publisher": "Westminster City Council",
+    "paywalled": false
+   },
+   {
+    "url": "https://en.wikipedia.org/wiki/Raymond_Revuebar",
+    "publisher": "Wikipedia",
+    "paywalled": false
+   }
+  ],
+  "image": {
+   "url": "",
+   "licence": "",
+   "source": "",
+   "note": "Historic venue image rights to be cleared before publication."
+  },
+  "slug": "raymond-revuebar-walkers-court",
+  "taboo_category": "nightlife / striptease / licensing",
+  "overlay": "london_taboo",
+  "age_gate": true,
+  "deep_dive": true,
+  "contested": false
+ }
+]
