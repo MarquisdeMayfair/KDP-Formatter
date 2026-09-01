@@ -1,5 +1,33 @@
 # KDP Formatter SaaS
 
+## DirectorHelp deterministic book pipeline
+
+DirectorHelp books use canonical Markdown as the primary source. PDF import is
+only a recovery path and is not used to infer book structure. Explicit source
+headings map as follows:
+
+- `# PART ...` plus its following `# Title` becomes a book part
+- `## N. Title` becomes Chapter N
+- `###` headings remain subsections inside the chapter
+
+One cleaned manuscript model produces both the print PDF and reflowable EPUB.
+Builds fail if structure, PDF parsing, page size, margins, font embedding, image
+resolution, XML parsing or EPUBCheck validation fails.
+
+```bash
+python scripts/build_directorhelp_book.py \
+  --input /path/to/canonical-guide.md \
+  --output-dir output/pdf/directorhelp-title \
+  --slug directorhelp-title \
+  --cover /path/to/approved-front-cover.png \
+  --trim 6x9 \
+  --edition "2026/27 Edition 1"
+```
+
+Supported trim sizes are `5x8`, `5.5x8.5`, `6x9`, `7x10`, and `8.5x11`.
+The final Kindle Previewer, KDP Print Previewer and physical proof checks remain
+mandatory human release gates. See [the DirectorHelp release SOP](docs/DIRECTORHELP_RELEASE_SOP.md).
+
 ## Project Overview
 - KDP Formatter SaaS application for converting manuscripts to KDP-compliant PDF and EPUB
 - Deployed on e2-medium VM at `kdppublish.newmarylebonepress.com`
