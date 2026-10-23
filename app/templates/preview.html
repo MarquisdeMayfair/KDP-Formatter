@@ -137,13 +137,14 @@
                         <span class="config-label">Structure Detection:</span>
                         <span id="config-ai" class="config-value">{{ 'AI-powered' if config.use_ai else 'Regex-based' }}</span>
                     </div>
+                    <div class="config-item"><span class="config-label">Book configuration:</span><span class="config-value">{{ config.publishing_profile or "general" }} / {{ config.layout_mode or "reflow" }}</span></div>
                     <div class="config-item">
                         <span class="config-label">Page Size:</span>
                         <span id="config-page-size" class="config-value">{{ config.page_size }}</span>
                     </div>
                     <div class="config-item">
                         <span class="config-label">Margins:</span>
-                        <span id="config-margins" class="config-value">{{ config.margins }} inches</span>
+                        <span id="config-margins" class="config-value">{{ 'Preserved from source' if config.layout_mode == 'preserve' else (config.margins ~ ' inches') }}</span>
                     </div>
                     <div class="config-item">
                         <span class="config-label">Drop Caps:</span>
@@ -173,7 +174,7 @@
                     <button id="download-epub" class="btn-primary">📖 Download EPUB</button>
                     {% endif %}
                     <button id="download-report" class="btn-secondary">📋 Validation Report</button>
-                    <button id="download-idm" class="btn-secondary">🔧 IDM JSON</button>
+                    <button id="download-idm" class="btn-secondary" {% if config.profile_builder %}disabled title="This profile does not generate IDM"{% endif %}>🔧 IDM JSON</button>
                 </div>
 
                 <div class="action-buttons">

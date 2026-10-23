@@ -17,11 +17,9 @@ from abc import ABC, abstractmethod
 import re
 
 # #region agent log
-_DEBUG_LOG_PATH = "/Users/nik/Downloads/KDP-Formatter-main/.cursor/debug.log"
 def _debug_log(location, message, data=None, hypothesis_id=None):
-    import time
-    entry = {"location": location, "message": message, "data": data or {}, "hypothesisId": hypothesis_id, "timestamp": int(time.time()*1000), "sessionId": "debug-session"}
-    with open(_DEBUG_LOG_PATH, "a") as f: f.write(json.dumps(entry) + "\n")
+    import logging
+    logging.getLogger(__name__).debug("%s: %s", location, message)
 # #endregion
 
 try:

@@ -129,7 +129,12 @@ async def convert_file(
     page_size: str = Form("6x9"),
     margins: str = Form("0.75"),
     use_paragraph_spacing: bool = Form(False),
-    disable_indentation: bool = Form(False)
+    disable_indentation: bool = Form(False),
+    publishing_profile: str = Form("general"),
+    layout_mode: str = Form("auto"),
+    bleed: bool = Form(False),
+    first_page: int = Form(1),
+    last_page: Optional[int] = Form(None)
 ):
     """Handle file upload and conversion."""
     try:
@@ -138,6 +143,17 @@ async def convert_file(
         file_ext = Path(file.filename).suffix.lower()
         if file_ext not in allowed_extensions:
             raise HTTPException(status_code=400, detail=f"File type {file_ext} not supported. Allowed: {', '.join(allowed_extensions)}")
+
+        from publisher.build import PublishingConfig, build as build_publication
+        profile_config = PublishingConfig(publishing_profile, layout_mode, page_size,
+                                          bleed, first_page, last_page, output_format)
+        try:
+            resolved_mode = profile_config.resolved_mode(Path(file.filename))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        use_profile_builder = publishing_profile == "directorhelp" or resolved_mode == "preserve"
+        if use_profile_builder and (use_ai or use_drop_caps or use_paragraph_spacing or disable_indentation):
+            raise HTTPException(status_code=400, detail="AI and text styling controls apply only to general reflow; turn them off for this profile")
 
         # Validate file size (50MB limit)
         file_size = 0
@@ -170,6 +186,30 @@ async def convert_file(
         input_path = session_dir / f"input{file_ext}"
         with open(input_path, 'wb') as f:
             f.write(content)
+
+        if use_profile_builder:
+            try:
+                built = build_publication(input_path, session_dir, profile_config)
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc))
+            report = built.get("validation")
+            config_data = {"profile_builder": True, "publishing_profile": publishing_profile, "layout_mode": resolved_mode,
+                           "output_format": output_format, "page_size": page_size, "margins": margins,
+                           "bleed": bleed, "first_page": first_page, "last_page": last_page,
+                           "use_ai": False, "use_drop_caps": False,
+                           "use_paragraph_spacing": False, "disable_indentation": False}
+            sessions[session_id] = {"filename": file.filename, "timestamp": os.path.getctime(session_dir),
+                                    "config": config_data, "ai_cost": 0, "profile_report": report}
+            summary = {"pass": 0, "warning": 0, "fail": 0, "error": 0}
+            for check in (report or {}).get("checks", []):
+                summary[check["status"]] += 1
+            result = {"session_id": session_id, "validation_summary": summary,
+                      "preview_url": f"/preview/{session_id}", "draft_only": True}
+            for kind in ("pdf", "epub"):
+                if (session_dir / f"output.{kind}").exists():
+                    result[f"{kind}_url"] = f"/download/{session_id}/{kind}"
+            background_tasks.add_task(cleanup_old_sessions)
+            return result
 
         # Convert to IDM
         logger.info(f"Converting {file.filename} to IDM...")
@@ -241,6 +281,8 @@ async def convert_file(
         result["preview_url"] = f"/preview/{session_id}"
         return result
 
+    except HTTPException:
+        raise
     except ImportError as e:
         error_msg = str(e)
         if "pdfminer.six" in error_msg:
@@ -293,6 +335,10 @@ async def download_file(session_id: str, file_type: str):
         media_type = "application/epub+zip"
         filename = f"{Path(sessions[session_id]['filename']).stem}_formatted.epub"
     elif file_type == "report":
+        profile_report = sessions[session_id].get("profile_report")
+        if profile_report is not None:
+            return PlainTextResponse(json.dumps(profile_report, indent=2),
+                                     headers={"Content-Disposition": 'attachment; filename="draft-validation.txt"'})
         # Generate validation report
         pdf_path = session_dir / "output.pdf"
         if pdf_path.exists():
@@ -353,6 +399,9 @@ async def get_validation(session_id: str):
     if not pdf_path.exists():
         raise HTTPException(status_code=404, detail="PDF not found")
 
+    profile_report = sessions[session_id].get("profile_report")
+    if profile_report is not None:
+        return profile_report
     # Get configuration from session
     config_data = sessions[session_id].get('config', {})
     validation_config = ValidationConfig(

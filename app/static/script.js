@@ -213,6 +213,12 @@ async function generateDocument() {
     const margins = document.getElementById('margins').value;
     const formattingStyle = document.querySelector('input[name="formatting_style"]:checked').value;
 
+    formData.append('publishing_profile', document.getElementById('publishing-profile').value);
+    formData.append('layout_mode', document.getElementById('layout-mode').value);
+    formData.append('bleed', document.getElementById('bleed').checked);
+    formData.append('first_page', document.getElementById('first-page').value);
+    const lastSourcePage = document.getElementById('last-page').value;
+    if (lastSourcePage) formData.append('last_page', lastSourcePage);
     formData.append('output_format', outputFormat);
     formData.append('use_ai', useAi);
     formData.append('use_drop_caps', useDropCaps);

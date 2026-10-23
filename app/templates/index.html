@@ -46,6 +46,16 @@
         <section class="config-section">
             <h2>Configuration Options</h2>
             <form id="config-form">
+                <div class="form-group">
+                    <label for="publishing-profile">Book configuration</label>
+                    <select id="publishing-profile"><option value="general">General book</option><option value="directorhelp">DirectorHelp guide</option></select>
+                    <label for="layout-mode">Source layout</label>
+                    <select id="layout-mode"><option value="auto">Automatic: preserve PDFs, reflow text</option><option value="preserve">Preserve PDF layout</option><option value="reflow">Reflow text</option></select>
+                    <small>DirectorHelp uses canonical Markdown and its existing guide design. Preserved PDFs produce PDF drafts only.</small>
+                    <label><input type="checkbox" id="bleed"> Full-bleed interior (check source dimensions; do not resize)</label>
+                    <label for="first-page">First source PDF page (inclusive)</label><input id="first-page" type="number" min="1" value="1">
+                    <label for="last-page">Last source PDF page (optional, inclusive)</label><input id="last-page" type="number" min="1">
+                </div>
                 <!-- Output Format -->
                 <div class="form-group">
                     <label for="output-format">Output Format</label>
