@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -18,6 +19,8 @@ class PublishingConfig:
     first_page: int = 1
     last_page: int | None = None
     output_format: str = "pdf"
+    bleed_strategy: str = "validate"
+    print_cleanup: bool = False
 
     def resolved_mode(self, source: Path) -> str:
         if self.profile not in {"general", "directorhelp"}:
@@ -40,6 +43,12 @@ class PublishingConfig:
             raise ValueError("Page selection is only available in PDF preserve mode")
         if mode == "reflow" and self.bleed:
             raise ValueError("Reflow renderers do not generate full-bleed artwork")
+        if self.bleed_strategy not in {"validate", "extend_edges"}:
+            raise ValueError("Bleed strategy must be validate or extend_edges")
+        if self.bleed_strategy == "extend_edges" and not (mode == "preserve" and self.bleed):
+            raise ValueError("Edge extension requires PDF preserve mode with bleed enabled")
+        if self.print_cleanup and self.bleed_strategy != "extend_edges":
+            raise ValueError("Print cleanup requires explicit edge extension")
         dimensions(self.trim, self.bleed)
         return mode
 
@@ -84,8 +93,12 @@ def inspect_pdf(path: Path, config: PublishingConfig) -> dict:
                 check("font_resources", "warning" if unembedded else "pass", f"{len(unembedded)} unembedded font resources; visible usage must be verified")
             else:
                 rows = [r.split() for r in run.stdout.splitlines()[2:]]
-                low = [r for r in rows if len(r) >= 14 and r[2] == "image" and min(float(r[12]), float(r[13])) < 300]
+                low = [r for r in rows if len(r) >= 14 and r[2] == "image"
+                       and min(float(r[12]), float(r[13])) < 300
+                       and not (config.bleed_strategy == "extend_edges" and min(int(r[3]), int(r[4])) == 1)]
                 check("image_resolution", "warning" if low else "pass", f"{len(low)} image placements below 300 PPI")
+                if config.bleed_strategy == "extend_edges":
+                    check("bleed_edge_images", "pass", "Single-pixel edge continuation strips excluded from artwork PPI count; inspect trim transitions")
         except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
             check(name, "warning", f"Inspection unavailable: {type(exc).__name__}")
     check("manual_review", "warning", "Draft only: inspect safe areas, bleed artwork, transparency, pagination, colour and editorial issues; KDP Previewer and physical proof remain outstanding")
@@ -113,8 +126,17 @@ def build(source: str | Path, output_dir: str | Path, config: PublishingConfig) 
         writer = PdfWriter()
         for page in reader.pages[config.first_page - 1:last]:
             writer.add_page(page)
-        with (output / "output.pdf").open("wb") as stream:
-            writer.write(stream)
+        if config.bleed_strategy == "extend_edges":
+            from publisher.bleed import extend_edges
+            with tempfile.TemporaryDirectory(prefix="publisher-selected-") as temp:
+                selected = Path(temp) / "selected.pdf"
+                with selected.open("wb") as stream:
+                    writer.write(stream)
+                report["bleed_preparation"] = extend_edges(selected, output / "output.pdf",
+                    dimensions(config.trim, False), cleanup=config.print_cleanup)
+        else:
+            with (output / "output.pdf").open("wb") as stream:
+                writer.write(stream)
         report["source_pages"] = [config.first_page, last]
     elif config.profile == "directorhelp":
         from directorhelp_formatter.adapter import DirectorHelpMarkdownAdapter

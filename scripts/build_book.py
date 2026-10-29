@@ -15,12 +15,14 @@ def main():
     parser.add_argument('--mode', choices=['auto', 'preserve', 'reflow'], default='auto')
     parser.add_argument('--trim', default='6x9')
     parser.add_argument('--bleed', action='store_true')
+    parser.add_argument('--bleed-strategy', choices=['validate', 'extend_edges'], default='validate')
+    parser.add_argument('--print-cleanup', action='store_true')
     parser.add_argument('--first-page', type=int, default=1)
     parser.add_argument('--last-page', type=int)
     parser.add_argument('--format', choices=['pdf', 'epub', 'both'], default='pdf')
     args = parser.parse_args()
     try:
-        report = build(args.input, args.output_dir, PublishingConfig(args.profile, args.mode, args.trim, args.bleed, args.first_page, args.last_page, args.format))
+        report = build(args.input, args.output_dir, PublishingConfig(args.profile, args.mode, args.trim, args.bleed, args.first_page, args.last_page, args.format, args.bleed_strategy, args.print_cleanup))
     except (ValueError, OSError) as exc:
         parser.error(str(exc))
     print(f"Draft created: {args.output_dir}; profile={args.profile}, mode={report['resolved_mode']}")
