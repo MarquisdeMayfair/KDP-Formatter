@@ -143,15 +143,18 @@ def extend_edges(source: Path, destination: Path, trim_points, *, cleanup=False)
                 annotations = page.get('/Annots', [])
                 # Links have no visible appearance in these print inputs. Keep
                 # other annotation types so no visible content is silently lost.
-                kept = [a for a in annotations if a.get_object().get('/Subtype') != '/Link']
+                kept = [a for a in annotations
+                        if a.get_object().get('/Subtype') != '/Link'
+                        or a.get_object().get('/AP')
+                        or int(a.get_object().get('/F', 0)) & 4]
                 removed_links += len(annotations) - len(kept)
                 if annotations:
                     page[NameObject('/Annots')] = ArrayObject(kept)
             # Wrap native bytes in a Form instead of rewriting every numeric
             # drawing operand during merge. Its BBox clips at the original
             # trim; only an integer translation moves it onto the new canvas.
-            if any(a.get_object().get('/Subtype') != '/Link' for a in page.get('/Annots', [])):
-                raise ValueError('Visible annotations require a separately flattened print source')
+            if page.get('/Annots'):
+                raise ValueError('Annotations require print cleanup for nonprinting links, or a separately flattened print source for visible appearances')
             base = writer.add_page(base)
             form = DecodedStreamObject()
             form.set_data(page.get_contents().get_data())
